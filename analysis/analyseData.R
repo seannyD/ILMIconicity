@@ -12,7 +12,7 @@ folders = folders[grepl("MT_Exp",folders)]
 finalLangs = read.csv("../data/finalLanguages/FinalLanguages.csv", stringsAsFactors = F)
 #finalLangs = finalLangs[!is.na(finalLangs$Word),]
 #finalLangs = finalLangs[nchar(finalLangs$Word)>0,]
-#finalLangs[finalLangs$Cond=="Communication",]$Cond = "Comm"
+finalLangs[finalLangs$Cond=="Communication",]$Cond = "Comm"
 
 
 items = finalLangs$Item[1:12]
@@ -115,6 +115,8 @@ processGeneration = function(folder){
     
     # identify innovations
     d$innovation = !(d$word %in% startingLang  | duplicated(d$word))
+    d$innovationForMeaning = ! d$word == startingLang[d$target+1]
+      
     
     
     wordCounts = table(d$word)
@@ -126,7 +128,9 @@ processGeneration = function(folder){
                         trial.nr = d$round,
                         context = d$context,
                         target.meaning = d$target,
-                          word.produced = d$word)
+                          word.produced = d$word,
+                        innovation = d$innovation,
+                        innovationForMeaning = d$innovationForMeaning)
     meaningsX = gsub("\\.png","",gsub("MonicaIconicity2012/","",stringListToString(d[1,]$meanings)))
     alldat$contextString = sapply(d$context,function(X){
       x = stringListToNum(X)+1
@@ -190,6 +194,8 @@ for(i in 1:length(folders)){
   alldatx = rbind(alldatx,dx[[2]])
 }
 
+table(alldatx$chain,alldatx$gen,alldatx$condition)
+
 
 alldatx = alldatx[order(alldatx$condition, alldatx$chain, alldatx$gen, alldatx$trial.nr),]
 
@@ -232,3 +238,67 @@ plotmeans(increaseIconicity~gen, data=datax[datax$condition=='Comm' & datax$isSp
 plotmeans(increaseIconicity~gen, data=datax[datax$condition=='Comm' & datax$isSpikyMeaning==F  & datax$inFinalLang,], add=T, col=2)
 abline(h=0)
 
+
+plotmeans(increaseIconicity~wordCountSameMeaning ,data=datax[datax$round<24 & datax$condition=='Comm',])
+abline(h=0)
+summary(lm(increaseIconicity~wordCountSameMeaning*condition, data=datax[datax$round<24,]))
+
+
+plotmeans(increaseIconicity~cut(round,6), datax[datax$condition=='Learn',])
+plotmeans(increaseIconicity~cut(round,6), datax[datax$condition=='Comm',])
+
+
+plotChainRes = function(ret){
+  arin =which(!is.na(ret),arr.ind=T)
+  plot(c(0.5,4.5),c(12.5,0.5),type='n',xlab='',ylab='',xaxt='n',yaxt='n',ylim=c(12.5,0.5))
+  
+  
+  for(i in 1:3){
+    from = ret[,i]
+    to = ret[,(i+1):4]
+    for(j in 1:12){
+      tx = which(to==from[j],arr.ind=T)
+      if(nrow(tx)>0){
+      for(z in 1:nrow(tx)){
+        lines(c(i,tx[z,2]+1),c(j,tx[z,1]), col='gray')
+      }
+      }
+    }
+  }
+  text(arin[,2],arin[,1],matrix(ret,ncol=1), col = c("black",'red')[grepl('\\*',ret)+1])
+  
+}
+
+
+alldatx$word.produced = as.character(alldatx$word.produced)
+
+for(cond in unique(alldatx$condition)){
+  dx = alldatx[alldatx$condition==cond,]
+  for(chain in sort(unique(dx$chain))){
+    chainRes = data.frame(X=1:12)
+    dxx = dx[dx$chain==chain,]
+    for(gen in sort(unique(dxx$gen))){
+      dxxx = dxx[dxx$gen==gen,]
+      dxxx = dxxx[order(dxxx$target.meaning),]
+      
+      dxxx$trial.nr = dxxx$trial.nr - min(dxxx$trial.nr)
+      dxxx$var = paste(
+        dxxx$word.produced,
+       # c("","*")[dxxx$innovationForMeaning+1])
+       c("","*")[dxxx$innovation+1])
+      p1_1 = dxxx[dxxx$trial.nr %in% seq(0,0+23,2),]$var
+      p2_1 = dxxx[dxxx$trial.nr %in% seq(1,0+24,2),]$var
+      p1_2 = dxxx[dxxx$trial.nr %in% seq(24,24+23,2),]$var
+      p2_2 = dxxx[dxxx$trial.nr %in% seq(25,24+23,2),]$var
+      
+      ret = cbind(p1_1,p2_1,p1_2,p2_2,b=rep("",length(p1_1)))
+      colnames(ret) = c(paste(chain,gen,c("p1_1","p2_1","p1_2","p2_2")),"")
+      #plotChainRes(ret)
+      
+      if(nrow(ret)==12){
+      chainRes = cbind(chainRes,ret)
+      }
+    }
+    write.csv(chainRes,paste("../results/chainRes/",condition,'_',chain,'.csv',sep=''))
+  }
+}
