@@ -1,6 +1,11 @@
 library(gplots)
 setwd("~/Documents/MPI/MonicaIconicity/SelectionAnalysis/analysis/")
 
+# for some reason, this line doesn't always work if running the whole script
+folders = list.dirs("../data/trials3", recursive=F)
+folders = folders[grepl("MT_Exp",folders)]
+
+
 ##
 # Check ratings for letters correlate with overall ratings
 
@@ -38,14 +43,16 @@ m1 = lm(rating~letterRating+length , data=ratings.words)
 m2 = lm(rating~letterRating*length , data=ratings.words)
 anova(m0,m1,m2)
 
-summary(m2)
+chosenSpikinessModel = m2
+
+summary(chosenSpikinessModel)
 
 
 #####
 
 getIconicity <- function(X){
   lr = mean(ratings.letters[strsplit(X,'')[[1]],]$rating, na.rm=T)
-  predict(m2,newdata=data.frame(letterRating=lr,length=nchar(X)))
+  predict(chosenSpikinessModel,newdata=data.frame(letterRating=lr,length=nchar(X)))
 }
 
 ####
@@ -98,9 +105,10 @@ processGeneration = function(folder){
     
     startingLang = stringListToString(d[1,]$inputLang)
     
-    finalLangChain = chain - 2
+    finalLangChain = chain - 1
+    if(chain>2){ finalLangChain = chain-2}
     if(condition=="Learn"){
-      finalLangChain = finalLangChain+5
+      finalLangChain = chain+3
     }
     
     finalLang = finalLangs[finalLangs$Cond==condition & finalLangs$Chain==finalLangChain & finalLangs$Gen==gen,]$Word
@@ -112,7 +120,8 @@ processGeneration = function(folder){
     wordCounts = table(d$word)
     wordMeaningCounts = table(d$word,d$target)
     
-    alldat = data.frame(chain = finalLangChain,
+    alldat = data.frame(condition = condition,
+                        chain = finalLangChain,
                         gen = gen,
                         trial.nr = d$round,
                         context = d$context,
@@ -172,9 +181,6 @@ processGeneration = function(folder){
 }
 
 
-folders = list.dirs("../data/trials/", recursive=F)
-folders = folders[grepl("MT_Exp",folders)]
-
 datax = data.frame()
 alldatx = data.frame()
 for(i in 1:length(folders)){
@@ -184,6 +190,12 @@ for(i in 1:length(folders)){
   alldatx = rbind(alldatx,dx[[2]])
 }
 
+
+alldatx = alldatx[order(alldatx$condition, alldatx$chain, alldatx$gen, alldatx$trial.nr),]
+
+alldatx$estimatedSpikinessRating = getIconicity(as.character(alldatx$word.produced))
+
+datax = datax[order(datax$condition,datax$chain, datax$gen, datax$round),]
 
 write.csv(datax, file="../results/IncreaseInIconicity.csv")
 write.csv(alldatx, file="../results/AllTrialData.csv")
@@ -200,12 +212,15 @@ lines(dens.learn, col=2)
 abline(v=0)
 
 pdf(file='../results/graphs/IncreaseIconcity_ConditionByMeaningIsSpiky.pdf')
-plotmeans(increaseIconicity ~ paste(condition,isSpikyMeaning), data=datax)
+plotmeans(increaseIconicity ~ paste(condition,isSpikyMeaning), data=datax, connect=list(1:2,3:4))
 dev.off()
 
 pdf(file='../results/graphs/IncreaseIconcity_ConditionByWordInFinalLanguage.pdf')
-plotmeans(increaseIconicity ~ paste(condition,inFinalLang), data=datax)
+plotmeans(increaseIconicity ~ paste(condition,inFinalLang), data=datax, connect = list(1:2,3:4))
 dev.off()
+
+
+
 
 datax$condition = factor(datax$condition, levels=c("Learn","Comm"))
 summary(lm(increaseIconicity ~ round+gen + condition*inFinalLang,data=datax))
