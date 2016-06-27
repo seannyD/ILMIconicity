@@ -10,9 +10,9 @@ folders = folders[grepl("MT_Exp",folders)]
 # Check ratings for letters correlate with overall ratings
 
 finalLangs = read.csv("../data/finalLanguages/FinalLanguages.csv", stringsAsFactors = F)
-finalLangs = finalLangs[!is.na(finalLangs$Word),]
-finalLangs = finalLangs[nchar(finalLangs$Word)>0,]
-finalLangs[finalLangs$Cond=="Communication",]$Cond = "Comm"
+#finalLangs = finalLangs[!is.na(finalLangs$Word),]
+#finalLangs = finalLangs[nchar(finalLangs$Word)>0,]
+#finalLangs[finalLangs$Cond=="Communication",]$Cond = "Comm"
 
 
 items = finalLangs$Item[1:12]
