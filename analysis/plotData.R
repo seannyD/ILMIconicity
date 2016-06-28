@@ -11,8 +11,8 @@ hist(datax[datax$condition=='Learn',]$increaseIconicity)
 dens.comm = density(datax[datax$condition=='Comm',]$increaseIconicity)
 dens.learn = density(datax[datax$condition=='Learn',]$increaseIconicity)
 
-plot(dens.learn, main='', xlab='Change in iconicity')
-lines(dens.comm, col=2)
+plot(dens.comm, main='', xlab='Change in iconicity')
+lines(dens.learn, col=2)
 abline(v=0)
 
 pdf(file='../results/graphs/IncreaseIconcity_ConditionByMeaningIsSpiky.pdf')

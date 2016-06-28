@@ -1,4 +1,5 @@
 library(gplots)
+rm(list=ls())
 setwd("~/Documents/MPI/MonicaIconicity/SelectionAnalysis/analysis/")
 
 # for some reason, this line doesn't always work if running the whole script
@@ -21,39 +22,8 @@ finalLangs$meaningNum = match(finalLangs$Item,items)
 
 finalLangs2 = finalLangs[!duplicated(finalLangs$Word),]
 
-ratings = read.csv("../data/ratings/Sean_ratings.csv", stringsAsFactors = F)
-
-ratings.letters = ratings[nchar(ratings$string)==1,]
-rownames(ratings.letters) = ratings.letters$string
-ratings.words = data.frame(string=finalLangs2$Word, rating = finalLangs2$RatedSpikiness, stringsAsFactors = F)
-
-
-
-ratings.words$letterRating = sapply(ratings.words$string, function(X){
-  mean(ratings.letters[strsplit(X,'')[[1]],]$rating)
-})
-
-ratings.words$length = sapply(ratings.words$string, nchar)
-
-plot(ratings.words$rating,ratings.words$letterRating)
-cor.test(ratings.words$rating,ratings.words$letterRating)
-
-m0 = lm(rating~letterRating , data=ratings.words)
-m1 = lm(rating~letterRating+length , data=ratings.words)
-m2 = lm(rating~letterRating*length , data=ratings.words)
-anova(m0,m1,m2)
-
-chosenSpikinessModel = m2
-
-summary(chosenSpikinessModel)
-
-
-#####
-
-getIconicity <- function(X){
-  lr = mean(ratings.letters[strsplit(X,'')[[1]],]$rating, na.rm=T)
-  predict(chosenSpikinessModel,newdata=data.frame(letterRating=lr,length=nchar(X)))
-}
+# load model to predict spikiness
+load('PredictSpikinessModel.RDat')
 
 ####
 
@@ -87,7 +57,7 @@ getByPartResFiles = function(folder){
   dx = load_out_file(paste(folder,"/", resFiles[1],sep=''))
   if(!grepl("Learn",folder)){
     dx2 = load_out_file(paste(folder,"/", resFiles[2],sep=''))
-    dx = rbind(dx1,dx2)
+    dx = rbind(dx,dx2)
   }
   dx = dx[dx$ListenersResponse!="-",]
   dx = dx[order(dx$StimNum),]
@@ -197,8 +167,8 @@ processGeneration = function(folder){
       if(d[i,]$innovation){
         parent = currentParents[meaning+1]
         
-        oldIconicity = getIconicity(parent)
-        newIconicity = getIconicity(word)
+        oldIconicity = getIconicityFromRForest(parent)
+        newIconicity = getIconicityFromRForest(word)
         
         # If it's a spiky word, then we predict spikiness rating should go up
         #  if so, new iconicity > old iconicity, so this gives positive number
@@ -262,7 +232,7 @@ table(alldatx$chain,alldatx$gen,alldatx$condition)
 
 alldatx = alldatx[order(alldatx$condition, alldatx$chain, alldatx$gen, alldatx$trial.nr),]
 
-alldatx$estimatedSpikinessRating = getIconicity(as.character(alldatx$word.produced))
+alldatx$estimatedSpikinessRating = getIconicityFromRForest(as.character(alldatx$word.produced))
 
 datax = datax[order(datax$condition,datax$chain, datax$gen, datax$round),]
 

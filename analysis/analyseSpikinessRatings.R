@@ -6,20 +6,14 @@ setwd("~/Documents/MPI/MonicaIconicity/SelectionAnalysis/analysis/")
 
 predictSpikinessWithLMER = function(ratings.words){
   m.words = lmer(RatingSpikiness~ Item + (1|Part), data=ratings.words)
+  #plot(ratings.words$RatingSpikiness,resid(m.words))
   words = sort(unique(ratings.words$Item))
   words.predictions = predict(m.words,newdata=data.frame(Item=words, Part=1), re.form=NULL)
   names(words.predictions) = words
+  #cor(words.predictions, tapply(ratings.words$RatingSpikiness, ratings.words$Item, mean))
   return(words.predictions)
 }
 
-
-finalLangs = read.csv("../data/finalLanguages/FinalLanguages.csv", stringsAsFactors = F)
-finalLangs[finalLangs$Cond=="Communication",]$Cond = "Comm"
-
-items = finalLangs$Item[1:12]
-finalLangs$meaningNum = match(finalLangs$Item,items)
-
-finalLangs2 = finalLangs[!duplicated(finalLangs$Word),]
 
 ratings = read.delim("../data/ratings/SpikinessRatings", sep='\t', stringsAsFactors = F)
 
@@ -28,7 +22,6 @@ summary(m0)
 
 
 ratings.letters = ratings[nchar(ratings$Item)==1,]
-
 ratings.words = ratings[nchar(ratings$Item)>1,]
 
 
@@ -40,7 +33,9 @@ letterRaingsOfWords = sapply(words, function(X){
 })
 
 plot(letterRaingsOfWords, words.predictions)
-cor.test(letterRaingsOfWords, words.predictions)
+
+# Baseline for just using letters:
+cor(letterRaingsOfWords, words.predictions)
 
 
 
@@ -141,3 +136,14 @@ getIconicityFromRForest = function(word){
   return(predictedRatings)
 }
 
+getIconicityFromRForest = function(words){
+  
+  xdat = t(sapply(words,function(word){sapply(ngrams.all, function(X){grepl(X,word)})}))
+  xdat = as.data.frame(cbind(rep(NA,nrow(xdat)),rep(NA,nrow(xdat)),xdat))
+  
+  predictedRatings = predict(cf.all,newdata=xdat)
+  return(as.vector(predictedRatings))
+}
+
+
+save(getIconicityFromRForest, ngrams.all, cf.all, file='PredictSpikinessModel.RDat')
