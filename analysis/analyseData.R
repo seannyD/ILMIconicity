@@ -111,8 +111,15 @@ processGeneration = function(folder){
     # identify innovations
     d$innovation = !(d$word %in% startingLang  | duplicated(d$word))
     d$innovationForMeaning = ! d$word == startingLang[d$target+1]
-      
-    
+     
+    d$innovation  = F 
+    currWords = startingLang
+    for(i in 1:nrow(d)){
+      if(d[i,]$word != currWords[d[i,]$target+1]){
+        d[i,]$innovation = T
+        currWords[d[i,]$target+1] = d[i,]$word
+      }
+    }
     
     wordCounts = table(d$word)
     wordMeaningCounts = table(d$word,d$target)

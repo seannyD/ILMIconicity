@@ -37,13 +37,19 @@ plotmeans(increaseIconicity~gen, data=datax[datax$condition=='Comm' & datax$isSp
 abline(h=0)
 
 
-plotmeans(increaseIconicity~wordCountSameMeaning ,data=datax[datax$round<24 & datax$condition=='Comm',])
+plotmeans(increaseIconicity~wordCountSameMeaning ,data=datax)
 abline(h=0)
-summary(lm(increaseIconicity~wordCountSameMeaning*condition, data=datax[datax$round<24,]))
+
+summary(lm(increaseIconicity~wordCountSameMeaning*condition, data=datax[datax$wordCountSameMeaning<4,]))
 
 
-plotmeans(increaseIconicity~cut(round,6), datax[datax$condition=='Learn',])
-plotmeans(increaseIconicity~cut(round,6), datax[datax$condition=='Comm',])
+plotmeans(increaseIconicity~cut(round,4), datax[datax$condition=='Learn',], ylim=c(-0.15,0.15))
+plotmeans(increaseIconicity~cut(round,4), datax[datax$condition=='Comm',], ylim=c(-0.15,0.15),add=T, col=2, barcol = 2)
 
 
 plotmeans(increaseIconicity ~ paste(condition, correctGuess), data = datax)
+
+
+cx = ctree(RatedSpikiness~as.factor(Cond)+as.factor(Gen) + as.factor(Shape) + as.factor(Colour) + as.factor(Border), data=finalLangs)
+plot(cx)
+

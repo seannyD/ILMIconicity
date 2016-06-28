@@ -48,3 +48,9 @@ for(i in 1:length(fe)){
   arrows(fe[i]-stderr[i],i,fe[i]+stderr[i],i,code=3, angle=90)
 }
 
+
+
+
+
+m0 = lmer(increaseIconicity~ condition + (1+condition| chain) + (1+condition|gen), data=datax)
+summary(m0)
