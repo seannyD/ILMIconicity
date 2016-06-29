@@ -8,8 +8,19 @@ hist(datax$increaseIconicity)
 hist(datax[datax$condition=='Comm',]$increaseIconicity)
 hist(datax[datax$condition=='Learn',]$increaseIconicity)
 
-dens.comm = density(datax[datax$condition=='Comm',]$increaseIconicity)
-dens.learn = density(datax[datax$condition=='Learn',]$increaseIconicity)
+
+comm.innovation.iconicity.dist = datax[datax$condition=='Comm' & datax$Human,]$increaseIconicity
+learn.innovation.iconicity.dist = datax[datax$condition=='Learn' & datax$Human,]$increaseIconicity
+
+wilcox.test(comm.innovation.iconicity.dist)
+wilcox.test(learn.innovation.iconicity.dist)
+
+symmetry.test(comm.innovation.iconicity.dist)
+symmetry.test(learn.innovation.iconicity.dist)
+
+
+dens.comm = density(datax[datax$condition=='Comm' & datax$Human,]$increaseIconicity, adjust=1)
+dens.learn = density(datax[datax$condition=='Learn' & datax$Human,]$increaseIconicity,adjust=1)
 
 plot(dens.comm, main='', xlab='Change in iconicity')
 lines(dens.learn, col=2)
@@ -21,11 +32,11 @@ dev.off()
 
 pdf(file='../results/graphs/IncreaseIconcity_andSystematicity_ConditionByWordInFinalLanguage.pdf', width=10, height=4)
 par(mfrow=c(1,2))
-plotmeans(increaseIconicity ~ paste(condition,inFinalLang), data=datax, connect = list(1:2,3:4),xlab='', ylab="Increase", legends = c("Rejected","Survived","Rejected","Survived"))
+plotmeans(increaseIconicity ~ paste(condition,inFinalLang), data=datax[datax$Human,], connect = list(1:2,3:4),xlab='', ylab="Increase", legends = c("Rejected","Survived","Rejected","Survived"))
 title(main="Iconicity")
 axis(1,at=c(1.5,3.5),c("Communication","Learning"),line=1, tick=F)
 abline(h=0)
-plotmeans(systematicity.increase ~ paste(condition, inFinalLang), data = datax, connect = list(1:2,3:4), xlab='', ylab="Increase",, legends = c("Rejected","Survived","Rejected","Survived"))
+plotmeans(systematicity.increase ~ paste(condition, inFinalLang), data = datax[datax$Human,], connect = list(1:2,3:4), xlab='', ylab="Increase",, legends = c("Rejected","Survived","Rejected","Survived"))
 title(main="Systematicity")
 axis(1,at=c(1.5,3.5),c("Communication","Learning"),line=1, tick=F)
 abline(h=0)
@@ -33,12 +44,23 @@ dev.off()
 
 
 
-plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Learn',])
+plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Learn' & !alldatx$Human,])
 plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Comm',],add=T,col=2,barcol=2)
 
+ctrl = glmerControl(optCtrl = list(maxfun=50000))
 
-plotmeans(correctSpikiness~gen,alldatx[alldatx$condition=='Learn',])
-plotmeans(correctSpikiness~gen,alldatx[alldatx$condition=='Comm',],add=T,col=2,barcol=2)
+m0 = glmer(correctGuess ~ 1 + (1|chain) + (1|target.meaning), data=alldatx[alldatx$condition=='Comm' | (!alldatx$Human),], family = binomial, control= ctrl)
+m1 = glmer(correctGuess ~ condition + (1|chain) + (1|target.meaning), data=alldatx[alldatx$condition=='Comm' | (!alldatx$Human),], family = binomial, control= ctrl)
+anova(m0,m1)
+
+
+
+plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Learn' & alldatx$trial.nr >102 & !alldatx$Human,])
+plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Comm' & alldatx$trial.nr >102,],add=T,col=2,barcol=2)
+
+
+plotmeans(correctSpikiness~gen,alldatx[alldatx$condition=='Comm',])
+plotmeans(correctSpikiness~gen,alldatx[alldatx$condition=='Learn',],add=T,col=2,barcol=2)
 
 
 ###########
@@ -94,10 +116,21 @@ plotmeans(increaseIconicity~cut(round,4), datax[datax$condition=='Comm',], ylim=
 plotmeans(systematicity.increase~cut(round,4), datax[datax$condition=='Learn',])
 plotmeans(systematicity.increase~cut(round,4), datax[datax$condition=='Comm',],add=T, col=2, barcol = 2)
 
+ylimx = c(-0.04,0.04)
+plotmeans(increaseIconicity ~ paste(condition, correctGuess), data = datax[datax$Human & datax$condition=="Comm",], ylim=ylimx)
+abline(h=0)
+plotmeans(increaseIconicity ~ paste(condition, correctSpikiness), data = datax[datax$Human& datax$condition=="Comm",], ylim=ylimx)
+abline(h=0)
 
-plotmeans(increaseIconicity ~ paste(condition, correctGuess), data = datax)
+m0 = lmer(increaseIconicity ~ 1 + (1|chain) + (1|gen), data=datax[datax$Human & datax$condition=="Comm",])
 
+m1 = lmer(increaseIconicity ~ correctGuess + (1|chain) + (1|gen), data=datax[datax$Human & datax$condition=="Comm",])
 
+m2 = lmer(increaseIconicity ~ correctGuess + correctSpikiness + (1|chain) + (1|gen), data=datax[datax$Human & datax$condition=="Comm",])
+
+anova(m0,m1,m2)
+
+summary(m2)
 
 
 dens.commS = density(datax[datax$condition=='Comm',]$systematicity.increase)

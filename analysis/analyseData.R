@@ -280,9 +280,6 @@ processGeneration = function(folder){
 #######################
 # go through all the folders and extract data
 
-for(x in 1:length(folders)){
-  getByPartResFiles(folders[x])
-}
 
 datax = data.frame()
 alldatx = data.frame()

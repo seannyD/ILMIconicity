@@ -28,6 +28,7 @@ finalLangs$cond2 = paste(finalLangs$Cond,finalLangs$Chain, finalLangs$Gen)
 
 For each output language, take the difference in means in spikiness ratings between spiky and non-spiky meanings.  Compare this to 1000 permutations of the numbers.
 
+
 ```{r perm1, cache=TRUE}
 
 # Set the random seed for reproducibility
@@ -92,7 +93,9 @@ res2
 
 # Looking only at red-coloured meanings
 
-The mixed effects results suggested that there is a difference between conditions.  The difference could be because the permutation test does not take into account effects of items nor the other aspects of meaning.
+The mixed effects results suggested that there is a difference between conditions.  The absence of an effect of condition on iconicity here is probably due to the fact that condition may interact with the other meaning dimension colour and border (e.g. iconicity may be stronger in words for red objects than green or blue objects). 
+
+Below we run the same analysis, but just for the colour 'Red'.
 
 ```{r cache=TRUE}
 finalLangs2 = finalLangs[finalLangs$Colour=="Rojo",]

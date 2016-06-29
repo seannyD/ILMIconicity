@@ -76,14 +76,6 @@ plotmeans(finalLangs$RatedSpikiness.center~finalLangs$Item, las=2, xlab="", conn
 
 There are differences between items
 
-# Anova
-
-```{r}
-summary(aov(RatedSpikiness ~ Cond * Gen * Shape , data=finalLangs))
-```
-
-Effects of shape (spiky things rated more spiky), Condition:Shape (communication condition are rated more spiky)
-
 # Mixed effects model
 
 Build a series of models with random effects for Chain and Item.  
@@ -244,6 +236,7 @@ for(i in 1:length(fe)){
 ```
 
 \newpage
+
 # Binary tree analysis
 
 We use a binary decision tree to predict spikiness ratings by condition, generation, item shape, item colour and item border type.
