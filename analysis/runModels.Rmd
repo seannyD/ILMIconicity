@@ -1,0 +1,264 @@
+---
+title: "The interactive origin of iconiciy: Mixed effects models"
+output: pdf_document
+---
+
+# Load libraries
+
+```{r message=FALSE, warning=FALSE}
+
+library(gplots)
+library(lattice)
+library(lme4)
+library(party)
+```
+
+```{r echo=F}
+setwd("~/Documents/MPI/MonicaIconicity/SelectionAnalysis/analysis/")
+
+getMEText = function(r,ef, wald=NULL){
+
+AIC = r[2,]$AIC
+loglikDiff = signif(diff(r$logLik),2)
+chi = round(r$Chisq[2],2)
+df = r$`Chi Df`[2]
+p = signif(r$`Pr(>Chisq)`[2],2)
+
+wald.text = ""
+
+if(!is.null(wald)){
+  est = signif(wald[1],2)
+  stder = signif(wald[2],2)
+  t = signif(wald[3],2)
+  wald.text = paste("beta = ",est,", std.err = ",stder, ", t = ",t)
+}
+
+begin = 'There was no significant'
+if(p <0.1){
+  begin = "There was a marginal"
+}
+if(p < 0.05){
+  begin = 'There was a significant'  
+}
+
+
+return(paste(begin,ef,"(",wald.text,"log likelihood difference =",
+             loglikDiff,", df = ",df,"Chi Squared =", chi,"p = ",p,")."))
+}
+
+```
+
+# Load data
+```{r}
+finalLangs = read.csv("../data/finalLanguages/FinalLanguages.csv", stringsAsFactors = F)
+# convert labels to English
+finalLangs$Shape[finalLangs$Shape=="Picudo"] = "Spiky"
+finalLangs$Shape[finalLangs$Shape=="Redondo"] = "Round"
+```
+
+Center spikiness ratings and re-level factors.
+
+```{r}
+finalLangs$RatedSpikiness.center = 
+  finalLangs$RatedSpikiness- mean(finalLangs$RatedSpikiness)
+
+finalLangs$Cond = factor(finalLangs$Cond, levels=c("Learn","Communication"))
+finalLangs$Shape = factor(finalLangs$Shape, levels=c("Round","Spiky"))
+
+```
+
+Plot the data by item (all conditions, all generations)
+
+```{r}
+par(mar=c(8,4,2,2))
+plotmeans(finalLangs$RatedSpikiness.center~finalLangs$Item, las=2, xlab="", connect=F)
+```
+
+There are differences between items
+
+# Anova
+
+```{r}
+summary(aov(RatedSpikiness ~ Cond * Gen * Shape , data=finalLangs))
+```
+
+Effects of shape (spiky things rated more spiky), Condition:Shape (communication condition are rated more spiky)
+
+# Mixed effects model
+
+Build a series of models with random effects for Chain and Item.  
+
+
+```{r}
+# null model
+m0 = lmer(RatedSpikiness.center ~ 1 + (1 |Chain)  + (1|Item), data=finalLangs)
+# + condition
+m1 = lmer(RatedSpikiness.center ~ Cond + (1 |Chain)  + (1|Item), data=finalLangs)
+# + generation
+m2 = lmer(RatedSpikiness.center ~ Cond + Gen + (1 |Chain) + (1|Item), data=finalLangs)
+# + shape
+m3 = lmer(RatedSpikiness.center ~ Cond + Gen + Shape + (1 |Chain)  
+          + (1|Item), data=finalLangs)
+# + interaction between shape and generation
+m4 = lmer(RatedSpikiness.center ~ Cond + (Gen * Shape) + (1 |Chain)  
+          + (1|Item), data=finalLangs)
+# + interaction between condition and generation
+m5 = lmer(RatedSpikiness.center ~ (Cond*Gen) + (Gen * Shape) + (1 |Chain)  
+          + (1|Item), data=finalLangs)
+# + interaction between shape and condition
+m6 = lmer(RatedSpikiness.center ~ (Cond*Gen) + (Gen * Shape) + (Shape:Cond) 
+          + (1 |Chain)  + (1|Item), data=finalLangs)
+# + 3-way interaction
+m7 = lmer(RatedSpikiness.center ~ Cond * Gen * Shape + (1 |Chain)  
+          + (1|Item), data=finalLangs)
+```
+
+## Results
+
+Look inside main model
+
+```{r}
+summary(m7)
+```
+
+
+Test the differences between model fits.
+
+```{r}
+anova(m0,m1,m2,m3,m4,m5,m6,m7)
+```
+
+
+`r getMEText(anova(m2,m3), "main effect of shape",summary(m7)$coef['ShapeSpiky',])`
+
+`r getMEText(anova(m5,m6), "interaction between shape and condition", summary(m7)$coef['CondCommunication:ShapeSpiky',])`
+
+`r getMEText(anova(m3,m4), "interaction between shape and generation", summary(m7)$coef['Gen:ShapeSpiky',])`
+
+`r getMEText(anova(m6,m7), "three-way interaction between shape, condition and generation", summary(m7)$coef['CondCommunication:Gen:ShapeSpiky',])`
+
+
+
+
+Plot the random effects.
+
+```{r}
+dotplot(ranef(m7, condVar=T))
+```
+
+Plot the fixed effects with standard errors from the final model.
+
+```{r}
+
+fe = fixef(m7)
+stderr = summary(m7)$coefficients[,2]
+par(mar=c(4,17,2,2))
+plot(1:length(fixef(m7))~fixef(m7), pch=16, xlim=c(-0.35,0.35),ylim=c(length(fe),1), xlab='Fixed effect', ylab='', yaxt='n')
+axis(2,at=1:8, labels=names(fe), las=2)
+abline(v=0)
+for(i in 1:length(fe)){
+  arrows(fe[i]-stderr[i],i,fe[i]+stderr[i],i,code=3, angle=90)
+}
+```
+
+# Mixed effects model with binarised spikiness ratings
+
+The spikiness ratings are not normally distributed:
+
+```{r}
+hist(finalLangs$RatedSpikiness)
+```
+
+So we binarise the variable into spiky/not spiky:
+
+```{r}
+finalLangs$RatedSpikiness.bin = finalLangs$RatedSpikiness >4
+```
+
+Run a series of models.  Note that intermediate models 5 and 6 do not converge, but the final model 7 does.
+
+```{r}
+
+mcontrol = glmerControl(optCtrl = list(maxfun = 500000))
+
+mb0 = glmer(RatedSpikiness.bin ~ 1 + (1 |Chain)  + (1|Item), 
+            data=finalLangs, family=binomial, control = mcontrol)
+mb1 = glmer(RatedSpikiness.bin ~ Cond + (1 |Chain)  + (1|Item), 
+            data=finalLangs, family=binomial, control = mcontrol)
+mb2 = glmer(RatedSpikiness.bin ~ Cond + Gen + (1 |Chain) + (1|Item), 
+            data=finalLangs, family=binomial, control = mcontrol)
+mb3 = glmer(RatedSpikiness.bin ~ Cond + Gen + Shape + (1 |Chain)  + (1|Item), 
+            data=finalLangs, family=binomial, control = mcontrol)
+mb4 = glmer(RatedSpikiness.bin ~ Cond + (Gen * Shape) + (1 |Chain)  + (1|Item), 
+            data=finalLangs, family=binomial, control = mcontrol)
+mb5 = glmer(RatedSpikiness.bin ~ (Cond*Gen) + (Gen * Shape) + (1 |Chain)  + (1|Item), 
+            data=finalLangs, family=binomial, control = mcontrol)
+mb6 = glmer(RatedSpikiness.bin ~ (Cond*Gen) + (Gen * Shape) + (Shape:Cond) + (1 |Chain)  + (1|Item), 
+            data=finalLangs, family=binomial, control = mcontrol)
+mb7 = glmer(RatedSpikiness.bin ~ Cond * Gen * Shape + (1 |Chain)  + (1|Item), 
+            data=finalLangs, family=binomial, control = mcontrol)
+```
+
+## Results
+
+Look inside main model
+
+```{r}
+summary(mb7)
+```
+
+Test model comparison:
+
+```{r}
+anova(mb0,mb1,mb2,mb3,mb4,mb5,mb6,mb7)
+```
+
+`r getMEText(anova(mb2,mb3), "main effect of shape",summary(mb7)$coef['ShapeSpiky',])`
+
+`r getMEText(anova(mb5,mb6), "interaction between shape and condition", summary(mb7)$coef['CondCommunication:ShapeSpiky',])`
+
+`r getMEText(anova(mb3,mb4), "interaction between shape and generation", summary(mb7)$coef['Gen:ShapeSpiky',])`
+
+`r getMEText(anova(mb6,mb7), "three-way interaction between shape, condition and generation", summary(mb7)$coef['CondCommunication:Gen:ShapeSpiky',])`
+
+
+Plot random effects of final model
+
+```{r}
+dotplot(ranef(mb7,  condVar=T))
+```
+
+Plot fixed effects with standard error from final model.
+
+```{r}
+fe = fixef(mb7)
+stderr = summary(mb7)$coefficients[,2]
+par(mar=c(4,17,2,2))
+plot(1:length(fixef(mb7))~fixef(mb7), pch=16, xlim=c(-1,1),ylim=c(length(fe),1), 
+     xlab='Fixed effect', ylab='', yaxt='n')
+axis(2,at=1:8, labels=names(fe), las=2)
+abline(v=0)
+for(i in 1:length(fe)){
+  arrows(fe[i]-stderr[i],i,fe[i]+stderr[i],i,code=3, angle=90)
+}
+```
+
+\newpage
+# Binary tree analysis
+
+We use a binary decision tree to predict spikiness ratings by condition, generation, item shape, item colour and item border type.
+
+The results agree with those above, namely that the main effects are for shape, but spiky meanings are rated as more spiky in the communication condition
+
+```{r}
+finalLangs2 = finalLangs
+finalLangs2$Shape = factor(finalLangs2$Shape)
+finalLangs2$Colour = factor(finalLangs2$Colour)
+finalLangs2$Border = factor(finalLangs2$Border)
+finalLangs2$Cond = factor(finalLangs2$Cond)
+
+cx = ctree(RatedSpikiness~Cond+Gen+Shape+Colour+Border, data=finalLangs2)
+plot(cx)
+
+```
+

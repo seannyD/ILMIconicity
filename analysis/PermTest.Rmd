@@ -1,0 +1,200 @@
+---
+title: "The interactive origin of iconiciy: Permutation tests"
+output: pdf_document
+---
+
+# Load libraries
+
+```{r warning=FALSE, message=FALSE}
+
+library(gplots)
+library(lattice)
+library(lme4)
+```
+
+```{r echo=FALSE}
+setwd("~/Documents/MPI/MonicaIconicity/SelectionAnalysis/analysis/")
+```
+
+# Load data
+
+```{r}
+finalLangs = read.csv("../data/finalLanguages/FinalLanguages.csv", stringsAsFactors = F)
+# make a variable which stores condition, chain and generation
+finalLangs$cond2 = paste(finalLangs$Cond,finalLangs$Chain, finalLangs$Gen)
+```
+
+# Run permutation test
+
+For each output language, take the difference in means in spikiness ratings between spiky and non-spiky meanings.  Compare this to 1000 permutations of the numbers.
+
+```{r perm1, cache=TRUE}
+
+# Set the random seed for reproducibility
+set.seed(1278)
+
+# what factor should the data be split by?
+split = finalLangs[finalLangs$cond2==unique(finalLangs$cond2)[1],]$Shape
+
+# for each language (a single generation's output)
+res = tapply(finalLangs$RatedSpikiness, finalLangs$cond2, function(X){
+  # calculate the true difference
+  trueDiff = -diff(tapply(X, split,mean))
+  # permute the numbers and re-calculate difference
+  permDiff = replicate(1000,
+        {-diff(tapply(sample(X), split,mean)) })
+  
+  # work out p and z-socres
+  p = 1- sum(trueDiff > permDiff ) / length(permDiff)
+  z.score = (trueDiff - mean(permDiff)) / sd(permDiff)
+  return(c(p,z.score))
+})
+
+```
+
+Recast results into data frame:
+
+```{r}
+
+res2 = data.frame(
+p = sapply(res,head,n=1),
+z = sapply(res,tail,n=1),
+t(sapply(names(res),function(X){
+  strsplit(X," ")[[1]]
+}))
+, stringsAsFactors = F)
+names(res2) = c("p",'z','condition','chain','gen')
+```
+
+Plot the results.  Each line represents an independent chain.  The red lines show the results for the Learning condition.  The results suggest that there is no strong difference between the conditions.  One of the learning chains decreases in iconicity, due to that chain focussing on specifying the colour rather than the shape.
+
+```{r}
+par(mfrow=c(1,2))
+plot(c(1,6), c(-3,3), type='n',ylab='Z score', xlab='Generations')
+for(i in unique(res2$chain)){
+  dx =res2[res2$chain==i,]
+  lines(dx$gen,dx$z, col=c("black","red")[(dx$condition=="Learn")+1])
+}
+
+plot(c(1,6), c(0,1), type='n',ylab='p', xlab='Generations')
+for(i in unique(res2$chain)){
+  dx =res2[res2$chain==i,]
+  lines(dx$gen,dx$p, col=c("black","red")[(dx$condition=="Learn")+1])
+}
+```
+
+```{r}
+rownames(res2) = NULL
+res2
+```
+
+\newpage
+
+# Looking only at red-coloured meanings
+
+The mixed effects results suggested that there is a difference between conditions.  The difference could be because the permutation test does not take into account effects of items nor the other aspects of meaning.
+
+```{r cache=TRUE}
+finalLangs2 = finalLangs[finalLangs$Colour=="Rojo",]
+
+
+# Set the random seed for reproducibility
+set.seed(1278)
+
+# what factor should the data be split by?
+split = finalLangs2[finalLangs2$cond2==unique(finalLangs2$cond2)[1],]$Shape
+
+# for each language (a single generation's output)
+resRed = tapply(finalLangs2$RatedSpikiness, finalLangs2$cond2, function(X){
+  # calculate the true difference
+  trueDiff = -diff(tapply(X, split,mean))
+  # permute the numbers and re-calculate difference
+  permDiff = replicate(1000,
+        {-diff(tapply(sample(X), split,mean)) })
+  
+  # work out p and z-socres
+  p = 1- sum(trueDiff > permDiff ) / length(permDiff)
+  z.score = (trueDiff - mean(permDiff)) / sd(permDiff)
+  return(c(p,z.score))
+})
+res2Red = data.frame(
+p = sapply(resRed,head,n=1),
+z = sapply(resRed,tail,n=1),
+t(sapply(names(resRed),function(X){
+  strsplit(X," ")[[1]]
+}))
+, stringsAsFactors = F)
+names(res2Red) = c("p",'z','condition','chain','gen')
+
+```
+
+Plot the results.  In this case, we do see a division between the two conditions by the last generation.
+
+```{r}
+par(mfrow=c(1,2))
+plot(c(1,6), c(-3,3), type='n',ylab='Z score')
+for(i in unique(res2Red$chain)){
+  dx =res2Red[res2Red$chain==i,]
+  lines(dx$gen,dx$z, col=c("black","red")[(dx$condition=="Learn")+1])
+}
+
+plot(c(1,6), c(0,1), type='n',ylab='p')
+for(i in unique(res2Red$chain)){
+  dx =res2Red[res2Red$chain==i,]
+  lines(dx$gen,dx$p, col=c("black","red")[(dx$condition=="Learn")+1])
+}
+```
+
+\newpage
+
+# Stratified permutation
+
+More generally, the results change if we run a permutation test on the whole data, but only permuting within colour.
+
+```{r perm2, cache=TRUE}
+set.seed(2389)
+split = finalLangs[finalLangs$cond2==unique(finalLangs$cond2)[1],]$Shape
+permWithin = finalLangs[finalLangs$cond2==unique(finalLangs$cond2)[1],]$Colour
+
+
+res3 = tapply(finalLangs$RatedSpikiness, finalLangs$cond2, function(X){
+  trueDiff = -diff(tapply(X, split,mean))
+  permDiff = replicate(1000,
+                       {-diff(tapply(
+                         unlist(tapply(X,permWithin,sample)), split,mean)) })
+  p = 1- sum(trueDiff > permDiff ) / length(permDiff)
+  z.score = (trueDiff - mean(permDiff)) / sd(permDiff)
+  return(c(p,z.score))
+})
+
+res4 = data.frame(
+  p = sapply(res3,head,n=1),
+  z = sapply(res3,tail,n=1),
+  t(sapply(names(res3),function(X){
+    strsplit(X," ")[[1]]
+  }))
+  , stringsAsFactors = F)
+names(res4) = c("p",'z','condition','chain','gen')
+```
+
+```{r}
+
+par(mfrow=c(1,2))
+plot(c(1,6), c(-20,20), type='n',ylab='Z score',xlab='Generations')
+for(i in unique(res4$chain)){
+  dx =res4[res4$chain==i,]
+  lines(dx$gen,dx$z, col=c("black","red")[(dx$condition=="Learn")+1])
+}
+
+plot(c(1,6), c(0,1), type='n',ylab='p',xlab='Generations')
+for(i in unique(res4$chain)){
+  dx =res4[res4$chain==i,]
+  lines(dx$gen,dx$p, col=c("black","red")[(dx$condition=="Learn")+1])
+}
+```
+
+
+```{r}
+rownames(res4) = NULL
+res4
+```

@@ -1,4 +1,5 @@
 library(gplots)
+library(vegan)
 rm(list=ls())
 setwd("~/Documents/MPI/MonicaIconicity/SelectionAnalysis/analysis/")
 
@@ -18,6 +19,11 @@ finalLangs[finalLangs$Cond=="Communication",]$Cond = "Comm"
 
 items = finalLangs$Item[1:12]
 finalLangs$meaningNum = match(finalLangs$Item,items)
+
+meaningDistance = 
+  outer(finalLangs$Shape[1:12],finalLangs$Shape[1:12],"!=") +
+  outer(finalLangs$Colour[1:12],finalLangs$Colour[1:12],"!=") +
+  outer(finalLangs$Border[1:12],finalLangs$Border[1:12],"!=")
 
 
 finalLangs2 = finalLangs[!duplicated(finalLangs$Word),]
@@ -54,6 +60,8 @@ load_out_file = function(f){
 getByPartResFiles = function(folder){
   resFiles = list.files(folder, pattern='*.out')
   
+  
+  
   dx = load_out_file(paste(folder,"/", resFiles[1],sep=''))
   if(!grepl("Learn",folder)){
     dx2 = load_out_file(paste(folder,"/", resFiles[2],sep=''))
@@ -61,10 +69,41 @@ getByPartResFiles = function(folder){
   }
   dx = dx[dx$ListenersResponse!="-",]
   dx = dx[order(dx$StimNum),]
+  
+  
   dx$ListenersResponse = as.numeric(dx$ListenersResponse)
   dx$correct = dx$Stimulus == dx$ListenersResponse
   dx$correctSpikiness = (dx$Stimulus < 6) == (dx$ListenersResponse < 6)
+  
+  if(grepl("Learn",folder)){
+  startLangX = stringListToString(dx$CurrentSignals[1])
+  
+  humanT = table(dx$SpeakersResponse %in% startLangX,rep(1:2,length.out=nrow(dx)))
+  print(humanT)
+  human = 1
+  if(nrow(humanT)!=1){
+  
+    human = which(humanT[1,]!=0)
+  }
+  print(c("Human",human))
+  dx$Human = rep(c(human==1,human!=1),length.out=nrow(dx))
+  
+  } else{
+    dx$Human = T
+  }
+  
   return(dx)
+}
+
+getSystematicity = function(lang){
+  signalDist = adist(lang)
+  a = matrix(rep(nchar(lang),length(lang)),ncol=length(lang))
+  b = matrix(rep(nchar(lang),length(lang)),ncol=length(lang),byrow=T)
+  a[b>a] = b[b>a]
+  # normalise signal dist
+  signalDist = signalDist/a
+  ret = vegan::mantel(signalDist,meaningDistance,permutations=1,method='spearman')$statistic
+  return(ret)
 }
 
 processGeneration = function(folder){
@@ -77,9 +116,7 @@ processGeneration = function(folder){
     if(!"Comm" %in% bits){ 
       condition = "Learn"
       }
-    
-    
-    
+
 #    resFile = list.files(folder, pattern='*.OUT')
 #    d = read.delim(paste(folder,"/", resFile,sep=''),sep='\t',quote="", stringsAsFactors = F, header=F)
 #    numNAs = apply(d,2,function(X){sum(is.na(X))})
@@ -109,7 +146,7 @@ processGeneration = function(folder){
     finalLang = finalLangs[finalLangs$Cond==condition & finalLangs$Chain==finalLangChain & finalLangs$Gen==gen,]$Word
     
     # identify innovations
-    d$innovation = !(d$word %in% startingLang  | duplicated(d$word))
+    d$innovation.mutation = !(d$word %in% startingLang  | duplicated(d$word))
     d$innovationForMeaning = ! d$word == startingLang[d$target+1]
      
     d$innovation  = F 
@@ -133,9 +170,11 @@ processGeneration = function(folder){
                         word.produced = d$word,
                         innovation = d$innovation,
                         innovationForMeaning = d$innovationForMeaning,
+                        innovation.mutation = d$innovation.mutation,
                         guessedMeaning = d$ListenersResponse,
                         correctGuess = d$correct,
-                        correctSpikiness = d$correctSpikiness)
+                        correctSpikiness = d$correctSpikiness,
+                        Human = d$Human)
     meaningsX = gsub("\\.png","",gsub("MonicaIconicity2012/","",stringListToString(d[1,]$meanings)))
     alldat$contextString = sapply(d$context,function(X){
       x = stringListToNum(X)+1
@@ -160,7 +199,11 @@ processGeneration = function(folder){
       guessedMeaning = rep(F,sum(d$innovation)), 
       correctGuess = rep(F,sum(d$innovation)), 
       correctSpikiness = rep(F,sum(d$innovation)), 
+      systematicity.increase = rep(F,sum(d$innovation)),
+      innovation.mutation = rep(F,sum(d$innovation)),
+      Human = d[d$innovation,]$Human,
     stringsAsFactors = F)
+    
     
     
     currentParents = startingLang
@@ -186,7 +229,16 @@ processGeneration = function(folder){
         if(!isSpikyMeaning){
           increaseIconicity = oldIconicity - newIconicity
         }
+
+        oldSystematicity = getSystematicity(currentParents)
+        curp2 = currentParents
+        curp2[meaning+1] = word
+        newSystematicity = getSystematicity(curp2)
         
+        # systematicity should incrase
+        sys.diff = newSystematicity - oldSystematicity
+        
+                
         wordsUsedInSameMeaning = wordMeaningCounts[word, meaning+1]
         
         inFinalLang = word == finalLang[meaning+1]
@@ -208,7 +260,10 @@ processGeneration = function(folder){
                          inFinalLang,
                          guessedMeaning,
                          correctGuess,
-                         correctSpikiness
+                         correctSpikiness,
+                         sys.diff,
+                         d[i,]$innovation.mutation,
+                         d[i,]$Human
                         )
         rcount = rcount + 1
       }
@@ -224,6 +279,10 @@ processGeneration = function(folder){
 
 #######################
 # go through all the folders and extract data
+
+for(x in 1:length(folders)){
+  getByPartResFiles(folders[x])
+}
 
 datax = data.frame()
 alldatx = data.frame()
