@@ -52,7 +52,7 @@ ctrl = glmerControl(optCtrl = list(maxfun=50000))
 m0 = glmer(correctGuess ~ 1 + (1|chain) + (1|target.meaning), data=alldatx[alldatx$condition=='Comm' | (!alldatx$Human),], family = binomial, control= ctrl)
 m1 = glmer(correctGuess ~ condition + (1|chain) + (1|target.meaning), data=alldatx[alldatx$condition=='Comm' | (!alldatx$Human),], family = binomial, control= ctrl)
 anova(m0,m1)
-
+getMEText(anova(m0,m1),ef = "main effect of condition", summary(m1)$coef[2,])
 
 
 plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Learn' & alldatx$trial.nr >102 & !alldatx$Human,])
