@@ -3,6 +3,8 @@ title: "The interactive origin of iconiciy: Mixed effects models"
 output: pdf_document
 ---
 
+This file contains an analysis of the spikiness ratings of the final output languages and the accuracy of guessing during the experiments.  The spikiness ratings are not bimodally disributed, so the analysis of spikiness ratings is done using both the continuous spikiness rating values and a binarised version of the ratings.
+
 # Load libraries
 
 ```{r message=FALSE, warning=FALSE}
@@ -36,7 +38,7 @@ if(!is.null(wald)){
   if(!is.na(wald[4])){
     wptext = paste(", Wald p =",signif(wald[4],2))
   }
-  wald.text = paste("beta = ",est,", std.err = ",stder, ", Wald t = ",t,wptext)
+  wald.text = paste("beta = ",est,", std.err = ",stder, ", Wald t = ",t,wptext,';')
 }
 
 begin = 'There was no significant'
