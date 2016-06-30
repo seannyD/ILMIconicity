@@ -1,12 +1,15 @@
 ---
-title: "Untitled"
-output: pdf_document
+title: "The interactive origin of iconiciy: Estimating spikiness ratings"
+output:
+    pdf_document:
+        includes:
+            in_header: header.tex 
 ---
 
 
 # Load libraries
 
-```{r}
+```{r warning=F, message=F}
 library(ngram)
 library(gplots)
 library(lme4)
@@ -88,11 +91,11 @@ words.predictions = predictSpikinessWithLMER(ratings.words)
 
 # Model based on letter scores
 
-Estimate the spikiness rating of a word by taking the mean spikiness score for each of the letters in the word.
+Estimate the spikiness rating of a word by taking the mean spikiness score for each of the letters in the word.  This can be used as baseline to see if it's worth building a more complicated model.
 
 ```{r}
 
-letterRaingsOfWords = sapply(words, function(X){
+letterRaingsOfWords = sapply(names(words.predictions), function(X){
   mean(letter.predictions[strsplit(X,'')[[1]]])
 })
 
@@ -109,25 +112,43 @@ The model predictions correlate with the real values with r = `r signif(cor(lett
 
 # Random forests model based on unigrams and bigrams
 
+Build a model of spikiness ratings based on a training set, then predict the spikiness ratings of an unseen test set.
 
+Set parameters:
 
+```{r}
 
 proportionOfDataInTrainingSet = 0.75
 numberOfFolds = 20
 maxNGram = 2
 
+```
+
+Run the trainig and test cycles:
+
+```{r cache=T}
+# set random seed
 set.seed(2189)
+
+# variable for storing correlation between predictions and real ratings for each run
 res = c()
 
 for(run in 1:numberOfFolds){
+  # get list of items
   items = unique(ratings$Item)
-  trainItems = c(items[nchar(items)==1],sample(items[nchar(items)>1],sum(nchar(items)>1)*proportionOfDataInTrainingSet))
+  # select training items:
+  #  all single characters plus a random selection of words
+  trainItems = c(items[nchar(items)==1],
+                 sample(items[nchar(items)>1],
+                 sum(nchar(items)>1)*proportionOfDataInTrainingSet))
+  # test items - unseen items
   testItems = items[!items %in% trainItems]
   
+  # get data for training and test items
   trainSet = ratings[ratings$Item %in% trainItems,]
   testSet = ratings[ratings$Item %in% testItems,]
   
-  
+  # make list of ngrams in training set
   ngrams = unique(unlist(sapply(trainSet$Item, function(X){
     if(nchar(X)==1){
       return(X)
@@ -135,17 +156,19 @@ for(run in 1:numberOfFolds){
     unique(ngram_asweka(X,min=1,max=maxNGram,sep=''))
   })))
   
+  # make feature frame of ngrams
   rTrain = makeFeatureFrame(trainSet,ngrams)
   rTrain$RatingSpikiness = as.numeric(rTrain$RatingSpikiness)
   
+  # predict mean spikiness with lmer for test set
   rTest.predictions = predictSpikinessWithLMER(testSet)
+  # biuld feature frame of ngrams for test set
   rTest = makeFeatureFrame(testSet[!duplicated(testSet$Item),],ngrams)
   rTest$RatingSpikiness = rTest.predictions[rTest$Item]
   
   colselect = 2:ncol(rTrain)
-  #tx =ctree(RatingSpikiness ~ ., data=rTrain[,colselect])
-  #plot(tx)
   
+  # Build the random forest
   cf = cforest(RatingSpikiness ~ . , 
                data= rTrain[,colselect], 
                controls = cforest_control(mtry = 10))
@@ -154,16 +177,19 @@ for(run in 1:numberOfFolds){
   
   predictedRatings = predict(cf,newdata=rTest[,colselect])
   
-  #plot(predictedRatings,rTest$RatingSpikiness)
-  #cor.test(predictedRatings,rTest$RatingSpikiness)
   res = c(res,cor(predictedRatings,rTest$RatingSpikiness))
 }
+```
 
-mean(res)
-#2grams = 0.886473
+The mean correlation between predictions and real data was r = `r round(mean(res),3)`.  This is an acceptable level and a marked improvement on the baseline model (also consiering the random forests predictions were on unseen data).
 
-# make model with whole data
+Informal testing found that performance did not increase significantly when including trigrams.
 
+\newpage
+
+# Make model with whole data
+
+```{r}
 
 ngrams.all = unique(unlist(sapply(ratings$Item, function(X){
   if(nchar(X)==1){
@@ -183,22 +209,43 @@ cf.all = cforest(RatingSpikiness ~ . ,
              data= rAll[,2:ncol(rAll)], 
              controls = cforest_control(mtry = 10))
 
+tx =ctree(RatingSpikiness ~ ., data=rAll[,2:ncol(rAll)])
+```
 
-getIconicityFromRForest = function(word){
-  newData = c(Item=NA,RatingSpikiness=NA,sapply(ngrams.all, function(X){grepl(X,word)}))
-  newData = as.data.frame(t(newData))
-  predictedRatings = predict(cf.all,newdata=newData)
-  return(predictedRatings)
-}
+Build a function to predict iconicity results.
 
+```{r}
 getIconicityFromRForest = function(words){
   
-  xdat = t(sapply(words,function(word){sapply(ngrams.all, function(X){grepl(X,word)})}))
+  xdat = t(sapply(
+    words,
+    function(word){
+      sapply(
+        ngrams.all, 
+        function(X){
+          grepl(X,word)
+    })}))
   xdat = as.data.frame(cbind(rep(NA,nrow(xdat)),rep(NA,nrow(xdat)),xdat))
   
   predictedRatings = predict(cf.all,newdata=xdat)
   return(as.vector(predictedRatings))
 }
+```
 
+Save the function and variables to be used in other scripts.
+
+```{r}
 
 save(getIconicityFromRForest, ngrams.all, cf.all, file='PredictSpikinessModel.RDat')
+```
+
+Here's a sample tree from the forest:
+
+\newpage
+\blandscape
+
+```{r fig.width=12, fig.height=8}
+
+plot(tx, terminal_panel=node_boxplot(tx,id=F))
+```
+\elandscape
