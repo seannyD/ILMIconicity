@@ -9,8 +9,10 @@ output: pdf_document
 
 library(gplots)
 library(lattice)
+library(ggplot2)
 library(lme4)
 library(party)
+library(sjPlot)
 ```
 
 ```{r echo=F}
@@ -30,7 +32,11 @@ if(!is.null(wald)){
   est = signif(wald[1],2)
   stder = signif(wald[2],2)
   t = signif(wald[3],2)
-  wald.text = paste("beta = ",est,", std.err = ",stder, ", t = ",t)
+  wptext = ""
+  if(!is.na(wald[4])){
+    wptext = paste(", Wald p =",signif(wald[4],2))
+  }
+  wald.text = paste("beta = ",est,", std.err = ",stder, ", Wald t = ",t,wptext)
 }
 
 begin = 'There was no significant'
@@ -43,7 +49,7 @@ if(p < 0.05){
 
 
 return(paste(begin,ef,"(",wald.text,"log likelihood difference =",
-             loglikDiff,", df = ",df,"Chi Squared =", chi,"p = ",p,")."))
+             loglikDiff,", df = ",df,", Chi Squared =", chi,", p = ",p,")."))
 }
 
 ```
@@ -130,28 +136,18 @@ anova(m0,m1,m2,m3,m4,m5,m6,m7)
 `r getMEText(anova(m6,m7), "three-way interaction between shape, condition and generation", summary(m7)$coef['CondCommunication:Gen:ShapeSpiky',])`
 
 
-
-
 Plot the random effects.
 
 ```{r}
 dotplot(ranef(m7, condVar=T))
 ```
 
-Plot the fixed effects with standard errors from the final model.
+Plot the fixed effects with error estiamtes from the final model.  The 3-way interaction between condition, generation and shape is marginaly significant:
 
-```{r}
-
-fe = fixef(m7)
-stderr = summary(m7)$coefficients[,2]
-par(mar=c(4,17,2,2))
-plot(1:length(fixef(m7))~fixef(m7), pch=16, xlim=c(-0.35,0.35),ylim=c(length(fe),1), xlab='Fixed effect', ylab='', yaxt='n')
-axis(2,at=1:8, labels=names(fe), las=2)
-abline(v=0)
-for(i in 1:length(fe)){
-  arrows(fe[i]-stderr[i],i,fe[i]+stderr[i],i,code=3, angle=90)
-}
+```{r message=F, warning=F}
+sjp.lmer(m7, type='fe', geom.colors=c(1,1))
 ```
+
 
 # Mixed effects model with binarised spikiness ratings
 
@@ -222,17 +218,8 @@ dotplot(ranef(mb7,  condVar=T))
 
 Plot fixed effects with standard error from final model.
 
-```{r}
-fe = fixef(mb7)
-stderr = summary(mb7)$coefficients[,2]
-par(mar=c(4,17,2,2))
-plot(1:length(fixef(mb7))~fixef(mb7), pch=16, xlim=c(-1,1),ylim=c(length(fe),1), 
-     xlab='Fixed effect', ylab='', yaxt='n')
-axis(2,at=1:8, labels=names(fe), las=2)
-abline(v=0)
-for(i in 1:length(fe)){
-  arrows(fe[i]-stderr[i],i,fe[i]+stderr[i],i,code=3, angle=90)
-}
+```{r message=F, warning=F}
+sjp.lmer(mb7, type='fe', geom.colors=c(1,1))
 ```
 
 \newpage
@@ -254,4 +241,121 @@ cx = ctree(RatedSpikiness~Cond+Gen+Shape+Colour+Border, data=finalLangs2)
 plot(cx)
 
 ```
+
+\newpage
+
+# Accuracy
+
+Note that the column *Human* in the data indicates whether the signal was sent by a human.  This is always the case in the communication condition, but only true for half of the trials in the learning condition.  In the learning condition, when *Human* is `FALSE`, the human participant is guessing meaning from the signal sent by the program. 
+
+## Load data
+
+```{r}
+datax = read.csv("../results/IncreaseInIconicity.csv", stringsAsFactors = F)
+alldatx = read.csv("../results/AllTrialData.csv", stringsAsFactors = F)
+```
+
+The mean proportion of correct guesses in the communication condition was `r round((sum(alldatx[alldatx$condition=="Comm",]$correctGuess) / sum(alldatx$condition=="Comm"))*100,2)
+`%.  The mean proportion of correct guesses by the human participant in the learning condition was `r round((sum(alldatx[alldatx$condition=="Learn" & !alldatx$Human,]$correctGuess) / sum(alldatx$condition=="Learn" & !alldatx$Human))*100,2)
+`
+
+Plot the correct guesses by generation:
+
+```{r}
+plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Learn' & !alldatx$Human,], n.label = F)
+plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Comm',],add=T,col=2,barcol=2, n.label = F)
+```
+
+
+## Mixed effects model
+
+Binomial mixed effects model, with random effects for chain, target item.  Test whether there are differences between conditions.
+
+```{r}
+
+ctrl = glmerControl(optCtrl = list(maxfun=50000))
+# we want to exclude trials where the computer is guessing meanings 
+# from the participant's signals in the learning condition
+m0 = glmer(correctGuess ~ 1 + (1|chain) + (1|target.meaning) , 
+    data=alldatx[alldatx$condition=='Comm' | (!alldatx$Human),],
+    family = binomial, control= ctrl)
+
+m1 = glmer(correctGuess ~ 1 + (1|chain) + (1|target.meaning) + (1|gen), 
+    data=alldatx[alldatx$condition=='Comm' | (!alldatx$Human),], 
+    family = binomial, control= ctrl)
+m2 = glmer(correctGuess ~ condition + (1|chain) + (1|target.meaning)+ (1|gen), 
+    data=alldatx[alldatx$condition=='Comm' | (!alldatx$Human),], 
+    family = binomial, control= ctrl)
+anova(m0,m1,m2)
+```
+
+`r getMEText(anova(m1,m2),ef = "main effect of condition", summary(m2)$coef[2,])
+`
+
+`r getMEText(anova(m0,m1),ef = "difference between generations")`  There is a weak trend for the proportion of correct guesses to increase by generation, as shown by the estimates for the random effects for generation:
+
+```{r message=F, warning=F}
+x = sjp.lmer(m2, sort.est='sort.all', prnt.plot=F,
+             axis.labels=c("Chain",'Item','Generation'),
+             geom.colors=c(1,1))
+x$plot.list[[3]] + 
+  xlab("Generation") + 
+  ylab("Random effect (fit of increase in correct guesses)")
+```
+
+## Iconicity and accuracy
+
+Innovations are either more or less iconic than the words they replace.  There is no difference in how accurate the guesses are in terms of choosing the right item (see below, left), but the innovation tends to be more iconic when the shape of a meaning is guessed correctly (spiky or round).  That is, the iconicity is helping participants guess the shape of a target meaning correctly.
+
+Note that this analysis only makes sense for the communication condition. 
+
+```{r}
+par(mfrow=c(1,2))
+ylimx = c(-0.045,0.045)
+plotmeans(increaseIconicity ~ paste(condition, correctGuess), 
+          data = datax[datax$Human & datax$condition=="Comm",], 
+          ylim=ylimx, legends = c("Incorrect","Correct"),
+          xlab='',
+          ylab="Increase in iconicity")
+title("Guessing Item")
+abline(h=0)
+plotmeans(increaseIconicity ~ paste(condition, correctSpikiness), 
+          data = datax[datax$Human& datax$condition=="Comm",], 
+          ylim=ylimx,legends = c("Incorrect","Correct"),
+          xlab='',
+          ylab="Increase in iconicity")
+title("Guessing Shape")
+abline(h=0)
+```
+
+## Mixed effects model for accuracy and iconicity
+
+A mixed effects model predicting the increase in iconicity by whether the reciever selected the correct target item, and by whether the reciever selected an item which matched the target in the shape dimension, with random effects for chain, generation and item.  Note that it would make more intuitive sense to predict accuracy by increase in iconicity, but this way we can compare the effects of item accuracy versus shape accuracy.
+
+```{r}
+m0 = lmer(increaseIconicity ~ 1 + (1|chain) + (1|gen) , 
+          data=datax[datax$condition=="Comm",])
+
+m1 = lmer(increaseIconicity ~ correctGuess + (1|chain) + (1|gen)+ (1|meaning), 
+          data=datax[datax$condition=="Comm",])
+
+m2 = lmer(increaseIconicity ~ correctGuess + correctSpikiness + (1|chain) + (1|gen)+ (1|meaning), 
+          data=datax[datax$condition=="Comm",])
+
+anova(m0,m1,m2)
+
+summary(m2)
+```
+
+`r getMEText(anova(m1,m2), "main effect of guessing the shape correctly",summary(m2)$coef['correctSpikinessTRUE',])`
+
+
+Plot the fixed effects:
+
+```{r message=F, warning=F}
+sjp.glmer(m2, type='fe', geom.colors=c(1,1) )
+```
+
+Note that the model is probably overfitted, since the random effects are singulative. But the effect is clear from the plot of the raw data.
+
 

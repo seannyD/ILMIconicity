@@ -44,8 +44,8 @@ dev.off()
 
 
 
-plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Learn' & !alldatx$Human,])
-plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Comm',],add=T,col=2,barcol=2)
+plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Learn' & !alldatx$Human,], n.label = F)
+plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Comm',],add=T,col=2,barcol=2, n.label = F)
 
 ctrl = glmerControl(optCtrl = list(maxfun=50000))
 
@@ -60,7 +60,7 @@ plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Comm' & alldatx$trial.nr 
 
 
 plotmeans(correctSpikiness~gen,alldatx[alldatx$condition=='Comm',])
-plotmeans(correctSpikiness~gen,alldatx[alldatx$condition=='Learn',],add=T,col=2,barcol=2)
+plotmeans(correctSpikiness~gen,alldatx[alldatx$condition=='Learn' & !alldatx$Human,],add=T,col=2,barcol=2)
 
 
 ###########
@@ -116,11 +116,16 @@ plotmeans(increaseIconicity~cut(round,4), datax[datax$condition=='Comm',], ylim=
 plotmeans(systematicity.increase~cut(round,4), datax[datax$condition=='Learn',])
 plotmeans(systematicity.increase~cut(round,4), datax[datax$condition=='Comm',],add=T, col=2, barcol = 2)
 
-ylimx = c(-0.04,0.04)
-plotmeans(increaseIconicity ~ paste(condition, correctGuess), data = datax[datax$Human & datax$condition=="Comm",], ylim=ylimx)
+pdf("../results/graphs/CorrectGuesses_byIncreaseIconicity.pdf", width=8, height=4)
+par(mfrow=c(1,2))
+ylimx = c(-0.045,0.045)
+plotmeans(increaseIconicity ~ paste(condition, correctGuess), data = datax[datax$Human & datax$condition=="Comm",], ylim=ylimx, legends = c("Incorrect","Correct"),xlab='',ylab="Increase in iconicity")
+title("Guessing Item")
 abline(h=0)
-plotmeans(increaseIconicity ~ paste(condition, correctSpikiness), data = datax[datax$Human& datax$condition=="Comm",], ylim=ylimx)
+plotmeans(increaseIconicity ~ paste(condition, correctSpikiness), data = datax[datax$Human& datax$condition=="Comm",], ylim=ylimx,legends = c("Incorrect","Correct"),xlab='',ylab="Increase in iconicity")
+title("Guessing Shape")
 abline(h=0)
+dev.off()
 
 m0 = lmer(increaseIconicity ~ 1 + (1|chain) + (1|gen), data=datax[datax$Human & datax$condition=="Comm",])
 
