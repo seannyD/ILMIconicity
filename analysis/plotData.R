@@ -149,3 +149,22 @@ abline(v=0)
 cx = ctree(RatedSpikiness~as.factor(Cond)+as.factor(Gen) + as.factor(Shape) + as.factor(Colour) + as.factor(Border), data=finalLangs)
 plot(cx)
 
+
+
+
+plot(datax$increaseIconicity,datax$systematicity.increase)
+cor.test(datax$increaseIconicity,datax$systematicity.increase)
+
+plot(datax[datax$condition=="Comm",]$increaseIconicity,datax[datax$condition=="Comm",]$systematicity.increase)
+cor.test(datax[datax$condition=="Comm",]$increaseIconicity,datax[datax$condition=="Comm",]$systematicity.increase)
+
+plot(datax[datax$condition=="Learn" & datax$Human,]$increaseIconicity,datax[datax$condition=="Learn" & datax$Human,]$systematicity.increase)
+cor.test(datax[datax$condition=="Learn" & datax$Human,]$increaseIconicity,datax[datax$condition=="Learn" & datax$Human,]$systematicity.increase)
+
+m0 = lmer(increaseIconicity~condition*gen + (1|chain) + (1|meaning), data = datax[datax$Human,])
+m1 = lmer(increaseIconicity~systematicity.increase+(condition*gen) + (1|chain) + (1|meaning), data = datax[datax$Human,])
+m2 = lmer(increaseIconicity~systematicity.increase + (systematicity.increase:condition) + (condition*gen) + (1|chain) + (1|meaning), data = datax[datax$Human,])
+m3 = lmer(increaseIconicity~systematicity.increase*condition*gen + (1|chain) + (1|meaning), data = datax[datax$Human,])
+anova(m0,m1,m2,m3)
+
+sjp.lmer(m2,type='fe')

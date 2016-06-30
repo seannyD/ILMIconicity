@@ -1,11 +1,19 @@
 ---
 title: "The interactive origin of iconiciy: Mixed effects models"
-output: pdf_document
+output: 
+  pdf_document:
+    toc: true
 ---
+
+\newpage
+
+# Introduction
 
 This file contains an analysis of the spikiness ratings of the final output languages and the accuracy of guessing during the experiments.  The spikiness ratings are not bimodally disributed, so the analysis of spikiness ratings is done using both the continuous spikiness rating values and a binarised version of the ratings.
 
-# Load libraries
+# Spikiness ratings
+
+## Load libraries
 
 ```{r message=FALSE, warning=FALSE}
 
@@ -56,7 +64,8 @@ return(paste(begin,ef,"(",wald.text,"log likelihood difference =",
 
 ```
 
-# Load data
+## Load data
+
 ```{r}
 finalLangs = read.csv("../data/finalLanguages/FinalLanguages.csv", stringsAsFactors = F)
 # convert labels to English
@@ -84,7 +93,7 @@ plotmeans(finalLangs$RatedSpikiness.center~finalLangs$Item, las=2, xlab="", conn
 
 There are differences between items
 
-# Mixed effects model
+## Mixed effects model
 
 Build a series of models with random effects for Chain and Item.  
 
@@ -113,7 +122,7 @@ m7 = lmer(RatedSpikiness.center ~ Cond * Gen * Shape + (1 |Chain)
           + (1|Item), data=finalLangs)
 ```
 
-## Results
+### Results
 
 Look inside main model
 
@@ -150,8 +159,9 @@ Plot the fixed effects with error estiamtes from the final model.  The 3-way int
 sjp.lmer(m7, type='fe', geom.colors=c(1,1))
 ```
 
+\newpage
 
-# Mixed effects model with binarised spikiness ratings
+## Mixed effects model with binarised spikiness ratings
 
 The spikiness ratings are not normally distributed:
 
@@ -189,7 +199,7 @@ mb7 = glmer(RatedSpikiness.bin ~ Cond * Gen * Shape + (1 |Chain)  + (1|Item),
             data=finalLangs, family=binomial, control = mcontrol)
 ```
 
-## Results
+### Results
 
 Look inside main model
 
@@ -226,7 +236,7 @@ sjp.lmer(mb7, type='fe', geom.colors=c(1,1))
 
 \newpage
 
-# Binary tree analysis
+## Binary tree analysis
 
 We use a binary decision tree to predict spikiness ratings by condition, generation, item shape, item colour and item border type.
 
@@ -248,9 +258,11 @@ plot(cx)
 
 # Accuracy
 
-Note that the column *Human* in the data indicates whether the signal was sent by a human.  This is always the case in the communication condition, but only true for half of the trials in the learning condition.  In the learning condition, when *Human* is `FALSE`, the human participant is guessing meaning from the signal sent by the program. 
+
 
 ## Load data
+
+Note that the column *Human* in the data indicates whether the signal was sent by a human.  This is always the case in the communication condition, but only true for half of the trials in the learning condition.  In the learning condition, when *Human* is `FALSE`, the human participant is guessing meaning from the signal sent by the program. 
 
 ```{r}
 datax = read.csv("../results/IncreaseInIconicity.csv", stringsAsFactors = F)
@@ -258,12 +270,11 @@ alldatx = read.csv("../results/AllTrialData.csv", stringsAsFactors = F)
 ```
 
 The mean proportion of correct guesses in the communication condition was `r round((sum(alldatx[alldatx$condition=="Comm",]$correctGuess) / sum(alldatx$condition=="Comm"))*100,2)
-`%.  The mean proportion of correct guesses by the human participant in the learning condition was `r round((sum(alldatx[alldatx$condition=="Learn" & !alldatx$Human,]$correctGuess) / sum(alldatx$condition=="Learn" & !alldatx$Human))*100,2)
-`
+`%.  The mean proportion of correct guesses by the human participant in the learning condition was `r round((sum(alldatx[alldatx$condition=="Learn" & !alldatx$Human,]$correctGuess) / sum(alldatx$condition=="Learn" & !alldatx$Human))*100,2)`%.
 
-Plot the correct guesses by generation:
+Plot the correct guesses by generation (means and 95% confidence intervals):
 
-```{r}
+```{r warning=F}
 plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Learn' & !alldatx$Human,], n.label = F)
 plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Comm',],add=T,col=2,barcol=2, n.label = F)
 ```
@@ -305,7 +316,9 @@ x$plot.list[[3]] +
   ylab("Random effect (fit of increase in correct guesses)")
 ```
 
-## Iconicity and accuracy
+\newpage
+
+## Iconicity and accuracy for innovations
 
 Innovations are either more or less iconic than the words they replace.  There is no difference in how accurate the guesses are in terms of choosing the right item (see below, left), but the innovation tends to be more iconic when the shape of a meaning is guessed correctly (spiky or round).  That is, the iconicity is helping participants guess the shape of a target meaning correctly.
 
@@ -330,12 +343,14 @@ title("Guessing Shape")
 abline(h=0)
 ```
 
-## Mixed effects model for accuracy and iconicity
+\newpage
+
+### Mixed effects model for accuracy and iconicity
 
 A mixed effects model predicting the increase in iconicity by whether the reciever selected the correct target item, and by whether the reciever selected an item which matched the target in the shape dimension, with random effects for chain, generation and item.  Note that it would make more intuitive sense to predict accuracy by increase in iconicity, but this way we can compare the effects of item accuracy versus shape accuracy.
 
 ```{r}
-m0 = lmer(increaseIconicity ~ 1 + (1|chain) + (1|gen) , 
+m0 = lmer(increaseIconicity ~ 1 + (1|chain) + (1|gen) + (1|meaning), 
           data=datax[datax$condition=="Comm",])
 
 m1 = lmer(increaseIconicity ~ correctGuess + (1|chain) + (1|gen)+ (1|meaning), 
@@ -349,6 +364,8 @@ anova(m0,m1,m2)
 summary(m2)
 ```
 
+`r getMEText(anova(m0,m1), "main effect of guessing the item correctly",summary(m2)$coef['correctGuessTRUE',])`
+
 `r getMEText(anova(m1,m2), "main effect of guessing the shape correctly",summary(m2)$coef['correctSpikinessTRUE',])`
 
 
@@ -360,4 +377,147 @@ sjp.glmer(m2, type='fe', geom.colors=c(1,1) )
 
 Note that the model is probably overfitted, since the random effects are singulative. But the effect is clear from the plot of the raw data.
 
+## Iconicity and accuracy for whole data
 
+Make a variable that indicates the iconicity of a word according to its shape.  i.e. high if it aligns with shape, low if it does not.  In other words, reverse the scale for round meanings.
+
+```{r}
+alldatx$estimatedIconicity = alldatx$estimatedSpikinessRating
+
+alldatx$estimatedIconicity[alldatx$target.meaning>5] = 
+  7 - alldatx$estimatedIconicity[alldatx$target.meaning>5]
+
+```
+
+Plot the raw data
+
+```{r}
+
+ylimx= c(3.4,3.65)
+plotmeans(estimatedIconicity~correctSpikiness, 
+          data=alldatx[alldatx$condition=='Comm',],
+          ylim = ylimx,
+          xlab="Guessing shape",
+          ylab="Iconicity",
+          legends = c("Incorrect","Correct"),
+          main="Communication")
+
+plotmeans(estimatedIconicity~correctSpikiness, 
+          data=alldatx[alldatx$condition=='Learn' &
+                         (!alldatx$Human),],
+          ylim = ylimx,
+          xlab="Guessing shape",
+          ylab="Iconicity",
+          legends = c("Incorrect","Correct"),
+          main="Learning")
+
+
+```
+
+
+
+
+\newpage
+
+# Iconicity and systematicity
+
+We would like to test whether there is a link between the increase in iconicity and the increase in systematicity for innovations.
+
+Overall correlation between systematicity increase and iconicity increase:
+
+```{r}
+cor.test(datax[datax$Human,]$increaseIconicity,datax[datax$Human,]$systematicity.increase)
+```
+
+For the communication condition:
+
+```{r}
+cor.test(
+  datax[datax$condition=="Comm",]$increaseIconicity,
+  datax[datax$condition=="Comm",]$systematicity.increase)
+```
+
+For the learning condition:
+
+```{r}
+cor.test(
+  datax[datax$condition=="Learn" & datax$Human,]$increaseIconicity,
+  datax[datax$condition=="Learn" & datax$Human,]$systematicity.increase)
+```
+
+Simple linear model:
+
+```{r}
+summary(lm(increaseIconicity~systematicity.increase*condition, data=datax[datax$Human,]))
+```
+
+Significant main effect for systematicity increase and interaction.
+
+## Mixed effects model
+
+Build a series of mixed effects models predicting the increase in iconicity with random effects for chain and item.
+
+```{r}
+
+# select data - either trails from the communication condition
+#  or from the learning condition when the human was the speaker
+datax.sel = datax[datax$Human,]
+
+# Null model, predicting increase in iconicity by condition and generation
+m0 = lmer(increaseIconicity~condition*gen + (1|chain) + (1|meaning),
+          data = datax.sel)
+
+# Add main effect of systematicity increase
+m1 = lmer(increaseIconicity~systematicity.increase+(condition*gen) + (1|chain) + (1|meaning), 
+          data = datax.sel)
+
+# Add interaction between Sys. and condition
+m2 = lmer(increaseIconicity~systematicity.increase + (systematicity.increase:condition) +
+            (condition*gen) + (1|chain) + (1|meaning), 
+          data = datax.sel)
+
+# Add 3-way interaction
+m3 = lmer(increaseIconicity~systematicity.increase*condition*gen +
+            (1|chain) + (1|meaning), 
+          data = datax.sel)
+```
+
+## Results
+
+Test the model fit.  Note that the model converges on signualtive random effect estimates.
+
+```{r}
+anova(m0,m1,m2,m3)
+```
+
+`r getMEText(anova(m1,m2),"interaction between systematicity increase and condition")`
+
+Plot the fixed effects of model 2.  The relationship between systematicity and iconicity is more negative in the learning condition:
+
+```{r}
+sjp.lmer(m2,type='fe')
+```
+
+Plot differences in raw data:
+
+```{r}
+ylimx= c(-0.015,0.018)
+par(mfrow=c(1,2))
+plotmeans(systematicity.increase ~ increaseIconicity>0,
+          data=datax[datax$condition=="Comm",], 
+          legends = c("Decrease","Increase"), 
+          xlab="Change in iconicity", 
+          ylab="Change in systematicity",
+          main = "Communication",
+          ylim = ylimx)
+abline(h=0)
+plotmeans(systematicity.increase ~ increaseIconicity>0,
+          data=datax[datax$Human & datax$condition=="Learn",], 
+          legends = c("Decrease","Increase"), 
+          xlab="Change in iconicity", 
+          ylab="Change in systematicity",
+          main = "Learning",
+          ylim = ylimx)
+
+abline(h=0)
+```

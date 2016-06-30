@@ -297,6 +297,7 @@ alldatx = alldatx[order(alldatx$condition, alldatx$chain, alldatx$gen, alldatx$t
 
 alldatx$estimatedSpikinessRating = getIconicityFromRForest(as.character(alldatx$word.produced))
 
+
 datax = datax[order(datax$condition,datax$chain, datax$gen, datax$round),]
 
 write.csv(datax, file="../results/IncreaseInIconicity.csv")
