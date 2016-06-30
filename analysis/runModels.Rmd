@@ -71,6 +71,9 @@ finalLangs = read.csv("../data/finalLanguages/FinalLanguages.csv", stringsAsFact
 # convert labels to English
 finalLangs$Shape[finalLangs$Shape=="Picudo"] = "Spiky"
 finalLangs$Shape[finalLangs$Shape=="Redondo"] = "Round"
+
+# load all trial data
+alldatx = read.csv("../results/AllTrialData.csv",stringsAsFactors = F)
 ```
 
 Center spikiness ratings and re-level factors.
@@ -392,7 +395,7 @@ alldatx$estimatedIconicity[alldatx$target.meaning>5] =
 Plot the raw data
 
 ```{r}
-
+par(mfrow=c(1,2))
 ylimx= c(3.4,3.65)
 plotmeans(estimatedIconicity~correctSpikiness, 
           data=alldatx[alldatx$condition=='Comm',],

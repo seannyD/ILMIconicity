@@ -301,7 +301,7 @@ alldatx$estimatedSpikinessRating = getIconicityFromRForest(as.character(alldatx$
 datax = datax[order(datax$condition,datax$chain, datax$gen, datax$round),]
 
 write.csv(datax, file="../results/IncreaseInIconicity.csv")
-write.csv(alldatx, file="../results/AllTrialData.csv")
+write.csv(alldatx, file="../results/AllTrialData.csv", row.names = F)
 
 
 
