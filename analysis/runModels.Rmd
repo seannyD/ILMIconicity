@@ -288,14 +288,14 @@ cols = c('#1b9e77','#d95f02')
 
 hist(comm.innovation.iconicity.dist, col=cols[1],
      breaks=14, 
-     border = NA, 
+     border = cols[1], 
      main='',
      xlab="Change in iconicity")
 hist(learn.innovation.iconicity.dist, 
      add=T, 
      col=cols[2],
      breaks=14, 
-     border = NA)
+     border = cols[2])
 abline(v=0)
 legend(-0.45,150, legend = c("Communication","Learning"), col=cols, pch=15, cex=0.8)
 
