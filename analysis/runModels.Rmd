@@ -393,6 +393,83 @@ abline(h=0)
 
 ```
 
+\newpage
+
+## Increase in iconicity by survival
+
+In the communication condition, innovations that survive tend to increase both iconicity and systematicity.  However, in the learning condition, the innovations only contribute to systematicity but not to iconicity.
+
+```{r}
+par(mfrow=c(1,2))
+plotmeans(increaseIconicity ~ paste(condition,inFinalLang), data=datax[datax$Human,], connect = list(1:2,3:4),xlab='', ylab="Increase", legends = c("Rejected","Survived","Rejected","Survived"))
+title(main="Iconicity")
+axis(1,at=c(1.5,3.5),c("Communication","Learning"),line=1, tick=F)
+abline(h=0)
+plotmeans(systematicity.increase ~ paste(condition, inFinalLang), data = datax[datax$Human,], connect = list(1:2,3:4), xlab='', ylab="Increase",, legends = c("Rejected","Survived","Rejected","Survived"))
+title(main="Systematicity")
+axis(1,at=c(1.5,3.5),c("Communication","Learning"),line=1, tick=F)
+abline(h=0)
+```
+
+Build a mixed effects model predicting the increase in iconicity with random effects for chain, generation and item:
+
+```{r}
+m0= lmer(increaseIconicity ~ 1 +(1|chain) + (1|meaning) + (1|gen),
+         data=datax[datax$Human,])
+m1= lmer(increaseIconicity ~ condition +(1|chain) + (1|meaning) + (1|gen),
+         data=datax[datax$Human,])
+m2= lmer(increaseIconicity ~ condition+inFinalLang +(1|chain) + (1|meaning) + (1|gen),
+         data=datax[datax$Human,])
+m3= lmer(increaseIconicity ~ condition*inFinalLang +(1|chain) + (1|meaning) + (1|gen),
+         data=datax[datax$Human,])
+```
+
+Model comparison test:
+
+```{r}
+anova(m0,m1,m2,m3)
+```
+
+`r getMEText(anova(m2,m3),"interaction between condition and survival to transmission",summary(m3)$coef['conditionLearn:inFinalLangTRUE',])`
+
+Plot the fixed effects from the final model:
+
+```{r}
+sjp.lmer(m3,'fe', geom.colors = c(1,1))
+```
+
+
+
+### Increase in systematicity by survival
+
+Build a mixed effects model predicting the increase in systematicity with random effects for chain, generation and item:
+
+```{r}
+m0= lmer(systematicity.increase ~ 1 +(1|chain) + (1|meaning) + (1|gen),
+         data=datax[datax$Human,])
+m1= lmer(systematicity.increase ~ condition +(1|chain) + (1|meaning) + (1|gen),
+         data=datax[datax$Human,])
+m2= lmer(systematicity.increase ~ condition+inFinalLang +(1|chain) + (1|meaning) + (1|gen),
+         data=datax[datax$Human,])
+m3= lmer(systematicity.increase ~ condition*inFinalLang +(1|chain) + (1|meaning) + (1|gen),
+         data=datax[datax$Human,])
+```
+
+Model comparison test:
+
+```{r}
+anova(m0,m1,m2,m3)
+```
+
+`r getMEText(anova(m2,m3),"main effect of condition",summary(m3)$coef['conditionLearn:inFinalLangTRUE',])`
+
+`r getMEText(anova(m2,m3),"interaction between condition and survival to transmission",summary(m3)$coef['conditionLearn:inFinalLangTRUE',])`
+
+Plot the fixed effects from the final model:
+
+```{r}
+sjp.lmer(m3,'fe', geom.colors = c(1,1))
+```
 
 
 \newpage
