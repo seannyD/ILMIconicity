@@ -271,6 +271,49 @@ datax = read.csv("../results/IncreaseInIconicity.csv", stringsAsFactors = F)
 alldatx = read.csv("../results/AllTrialData.csv", stringsAsFactors = F)
 ```
 
+Number of innovations in each conditon, by whether the innovation was an unseen word (versus a change in mapping):
+
+```{r}
+tx = table(datax[datax$Human,]$innovation.mutation,
+           datax[datax$Human,]$condition)
+tx
+tx/rep(colSums(tx),each=2)
+```
+
+The number of innovations in each condition by generation (1-6, left to right).  The number of innovations declines in the learning condition:
+
+```{r}
+barplot(t(table(
+  datax[datax$Human,]$condition,
+  datax[datax$Human,]$gen)), beside = T,
+  ylab="Number of innovations")
+par(mfrow=c(1,2))
+barplot((table(
+  datax[datax$condition=="Comm",]$innovation.mutation,
+  datax[datax$condition=="Comm",]$gen)), beside = F,
+  ylab="Number of innovations"
+  ,ylim=c(0,150),
+  col=1:2,
+  main="Communicaiton")
+
+lx = datax$condition=="Learn" & datax$Human
+
+barplot((table(
+  datax[lx,]$innovation.mutation,
+  datax[lx,]$gen)), beside = F,
+  ylab="Number of innovations"
+  ,ylim=c(0,150),
+  col=1:2,
+  main="Learning")
+
+legend(1,140,legend=c("Form","Mapping"),
+  col=2:1, pch=15)
+
+
+```
+
+
+
 ## Distribution of iconicity in innovations
 
 Below is the distribution of how the innovation increases the iconicity of the mapping compared to the word that it replaced.  The increases are small compared to the full Likert scale (1-7), and centered around zero.
