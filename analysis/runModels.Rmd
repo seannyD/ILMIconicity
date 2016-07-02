@@ -280,13 +280,10 @@ tx
 tx/rep(colSums(tx),each=2)
 ```
 
-The number of innovations in each condition by generation (1-6, left to right).  The number of innovations declines in the learning condition:
+The number of innovations in each condition by generation.  The number of innovations declines in the learning condition:
 
 ```{r}
-barplot(t(table(
-  datax[datax$Human,]$condition,
-  datax[datax$Human,]$gen)), beside = T,
-  ylab="Number of innovations")
+
 par(mfrow=c(1,2))
 barplot((table(
   datax[datax$condition=="Comm",]$innovation.mutation,
@@ -294,7 +291,8 @@ barplot((table(
   ylab="Number of innovations"
   ,ylim=c(0,150),
   col=1:2,
-  main="Communicaiton")
+  main="Communicaiton",
+  xlab="Generation")
 
 lx = datax$condition=="Learn" & datax$Human
 
@@ -304,7 +302,8 @@ barplot((table(
   ylab="Number of innovations"
   ,ylim=c(0,150),
   col=1:2,
-  main="Learning")
+  main="Learning",
+  xlab="Generation")
 
 legend(1,140,legend=c("Form","Mapping"),
   col=2:1, pch=15)
