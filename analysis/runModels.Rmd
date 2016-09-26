@@ -253,7 +253,7 @@ finalLangs2 = finalLangs
 finalLangs2$Shape = factor(finalLangs2$Shape)
 finalLangs2$Colour = factor(finalLangs2$Colour)
 finalLangs2$Border = factor(finalLangs2$Border)
-finalLangs2$Cond = factor(finalLangs2$Cond)
+finalLangs2$Cond = factor(finalLangs2$Cond, labels = c("Reproduction",'Comm.'))
 
 cx = ctree(RatedSpikiness~Cond+Gen+Shape+Colour+Border, data=finalLangs2)
 plot(cx)

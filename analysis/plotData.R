@@ -34,11 +34,11 @@ pdf(file='../results/graphs/IncreaseIconcity_andSystematicity_ConditionByWordInF
 par(mfrow=c(1,2))
 plotmeans(increaseIconicity ~ paste(condition,inFinalLang), data=datax[datax$Human,], connect = list(1:2,3:4),xlab='', ylab="Increase", legends = c("Rejected","Survived","Rejected","Survived"))
 title(main="Iconicity")
-axis(1,at=c(1.5,3.5),c("Communication","Learning"),line=1, tick=F)
+axis(1,at=c(1.5,3.5),c("Communication","Reproduction"),line=1, tick=F)
 abline(h=0)
 plotmeans(systematicity.increase ~ paste(condition, inFinalLang), data = datax[datax$Human,], connect = list(1:2,3:4), xlab='', ylab="Increase",, legends = c("Rejected","Survived","Rejected","Survived"))
 title(main="Systematicity")
-axis(1,at=c(1.5,3.5),c("Communication","Learning"),line=1, tick=F)
+axis(1,at=c(1.5,3.5),c("Communication","Reproduction"),line=1, tick=F)
 abline(h=0)
 dev.off()
 
