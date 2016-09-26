@@ -360,3 +360,23 @@ for(cond in unique(alldatx$condition)){
     write.csv(chainRes,paste("../results/chainRes/",cond,'_',chain,'.csv',sep=''))
   }
 }
+
+
+# Numberof unique words in each condition:
+tapply(alldatx[alldatx$Human,]$word.produced, alldatx[alldatx$Human,]$condition, function(X){length(unique(X))})
+
+alldatx$pair = paste(alldatx$condition, alldatx$chain, alldatx$gen)
+
+commUnique = tapply(alldatx[alldatx$Human & alldatx$condition=='Comm',]$word.produced,
+       alldatx[alldatx$Human & alldatx$condition=='Comm',]$pair, 
+       function(X){length(unique(X))})
+
+learnUnique = tapply(alldatx[alldatx$Human & alldatx$condition=='Learn',]$word.produced,
+                    alldatx[alldatx$Human & alldatx$condition=='Learn',]$pair, 
+                    function(X){length(unique(X))})
+
+t.test(commUnique,learnUnique)
+
+
+
+

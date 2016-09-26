@@ -11,6 +11,8 @@ output:
 
 This file contains an analysis of the spikiness ratings of the final output languages and the accuracy of guessing during the experiments.  The spikiness ratings are not bimodally disributed, so the analysis of spikiness ratings is done using both the continuous spikiness rating values and a binarised version of the ratings.
 
+Note that in the main text, we refer to the two conditions as "communication" and "reproduction", while the data is coded as "communication" and "learning".
+
 # Spikiness ratings
 
 ## Load libraries
@@ -264,7 +266,7 @@ plot(cx)
 
 ## Load data
 
-Note that the column *Human* in the data indicates whether the signal was sent by a human.  This is always the case in the communication condition, but only true for half of the trials in the learning condition.  In the learning condition, when *Human* is `FALSE`, the human participant is guessing meaning from the signal sent by the program. 
+Note that the column *Human* in the data indicates whether the signal was sent by a human.  This is always the case in the communication condition, but only true for half of the trials in the reproduction condition.  In the reproduction condition, when *Human* is `FALSE`, the human participant is guessing meaning from the signal sent by the program. 
 
 ```{r}
 datax = read.csv("../results/IncreaseInIconicity.csv", stringsAsFactors = F)
@@ -302,7 +304,7 @@ barplot((table(
   ylab="Number of innovations"
   ,ylim=c(0,150),
   col=1:2,
-  main="Learning",
+  main="Reproduction",
   xlab="Generation")
 
 legend(1,140,legend=c("Form","Mapping"),
@@ -322,7 +324,7 @@ Below is the distribution of how the innovation increases the iconicity of the m
 # innovations produced by participants in the communication condition
 comm.innovation.iconicity.dist = 
   datax[datax$condition=='Comm' & datax$Human,]$increaseIconicity
-# innovations produced by the human in the learning condition
+# innovations produced by the human in the reproduction condition
 learn.innovation.iconicity.dist = 
   datax[datax$condition=='Learn' & datax$Human,]$increaseIconicity
 
@@ -339,7 +341,7 @@ hist(learn.innovation.iconicity.dist,
      breaks=14, 
      border = cols[2])
 abline(v=0)
-legend(-0.45,150, legend = c("Communication","Learning"), col=cols, pch=15, cex=0.8)
+legend(-0.45,150, legend = c("Communication","Reproduction"), col=cols, pch=15, cex=0.8)
 
 ```
 
@@ -371,7 +373,7 @@ Interestingly, the results look similar for the change in systematicity.
 # innovations produced by participants in the communication condition
 comm.innovation.sys.dist = 
   datax[datax$condition=='Comm' & datax$Human,]$systematicity.increase
-# innovations produced by the human in the learning condition
+# innovations produced by the human in the reproduction condition
 learn.innovation.sys.dist = 
   datax[datax$condition=='Learn' & datax$Human,]$systematicity.increase
 
@@ -388,7 +390,7 @@ hist(learn.innovation.sys.dist,
      breaks=14, 
      border = NA)
 abline(v=0)
-legend(-0.3,250, legend = c("Communication","Learning"), col=cols, pch=15)
+legend(-0.3,250, legend = c("Communication","Reproduction"), col=cols, pch=15)
 ```
 
 ```{r cache=T}
@@ -415,7 +417,7 @@ plotmeans(increaseIconicity ~ paste(condition,innovation.mutation),
           ylab='Increase in iconicity',
           connect = list(1:2,3:4)
           )
-axis(1,at=c(1.5,3.5),c("Communication","Learning"),line=1, tick=F)
+axis(1,at=c(1.5,3.5),c("Communication","Reproduction"),line=1, tick=F)
 abline(h=0)
 
 ```
@@ -430,7 +432,7 @@ plotmeans(systematicity.increase ~ paste(condition,innovation.mutation),
           ylab='Increase in systematicity',
           connect = list(1:2,3:4)
           )
-axis(1,at=c(1.5,3.5),c("Communication","Learning"),line=1, tick=F)
+axis(1,at=c(1.5,3.5),c("Communication","Reproduction"),line=1, tick=F)
 abline(h=0)
 
 ```
@@ -445,11 +447,11 @@ In the communication condition, innovations that survive tend to increase both i
 par(mfrow=c(1,2))
 plotmeans(increaseIconicity ~ paste(condition,inFinalLang), data=datax[datax$Human,], connect = list(1:2,3:4),xlab='', ylab="Increase", legends = c("Rejected","Survived","Rejected","Survived"))
 title(main="Iconicity")
-axis(1,at=c(1.5,3.5),c("Communication","Learning"),line=1, tick=F)
+axis(1,at=c(1.5,3.5),c("Communication","Reproduction"),line=1, tick=F)
 abline(h=0)
 plotmeans(systematicity.increase ~ paste(condition, inFinalLang), data = datax[datax$Human,], connect = list(1:2,3:4), xlab='', ylab="Increase",, legends = c("Rejected","Survived","Rejected","Survived"))
 title(main="Systematicity")
-axis(1,at=c(1.5,3.5),c("Communication","Learning"),line=1, tick=F)
+axis(1,at=c(1.5,3.5),c("Communication","Reproduction"),line=1, tick=F)
 abline(h=0)
 ```
 
@@ -477,7 +479,7 @@ anova(m0,m1,m2,m3)
 Plot the fixed effects from the final model:
 
 ```{r}
-sjp.lmer(m3,'fe', geom.colors = c(1,1))
+sjp.lmer(m3,'fe', geom.colors = c(1,1), p.kr=F)
 ```
 
 
@@ -510,7 +512,7 @@ anova(m0,m1,m2,m3)
 Plot the fixed effects from the final model:
 
 ```{r}
-sjp.lmer(m3,'fe', geom.colors = c(1,1))
+sjp.lmer(m3,'fe', geom.colors = c(1,1), p.kr = F)
 ```
 
 
@@ -537,7 +539,7 @@ Binomial mixed effects model, with random effects for chain, target item.  Test 
 
 ctrl = glmerControl(optCtrl = list(maxfun=50000))
 # we want to exclude trials where the computer is guessing meanings 
-# from the participant's signals in the learning condition
+# from the participant's signals in the reproduction condition
 m0 = glmer(correctGuess ~ 1 + (1|chain) + (1|target.meaning) , 
     data=alldatx[alldatx$condition=='Comm' | (!alldatx$Human),],
     family = binomial, control= ctrl)
@@ -659,7 +661,7 @@ plotmeans(estimatedIconicity~correctSpikiness,
           xlab="Guessing shape",
           ylab="Iconicity",
           legends = c("Incorrect","Correct"),
-          main="Learning")
+          main="Reproduction")
 
 
 ```
@@ -687,7 +689,7 @@ cor.test(
   datax[datax$condition=="Comm",]$systematicity.increase)
 ```
 
-For the learning condition:
+For the reproduction condition:
 
 ```{r}
 cor.test(
@@ -710,7 +712,7 @@ Build a series of mixed effects models predicting the increase in iconicity with
 ```{r}
 
 # select data - either trails from the communication condition
-#  or from the learning condition when the human was the speaker
+#  or from the reproduction condition when the human was the speaker
 datax.sel = datax[datax$Human,]
 
 # Null model, predicting increase in iconicity by condition and generation
@@ -742,10 +744,10 @@ anova(m0,m1,m2,m3)
 
 `r getMEText(anova(m1,m2),"interaction between systematicity increase and condition")`
 
-Plot the fixed effects of model 2.  The relationship between systematicity and iconicity is more negative in the learning condition:
+Plot the fixed effects of model 2.  The relationship between systematicity and iconicity is more negative in the reproduction condition:
 
 ```{r}
-sjp.lmer(m2,type='fe')
+sjp.lmer(m2,type='fe', p.kr = F)
 ```
 
 Plot differences in raw data:
@@ -766,7 +768,7 @@ plotmeans(systematicity.increase ~ increaseIconicity>0,
           legends = c("Decrease","Increase"), 
           xlab="Change in iconicity", 
           ylab="Change in systematicity",
-          main = "Learning",
+          main = "Reproduction",
           ylim = ylimx)
 
 abline(h=0)
