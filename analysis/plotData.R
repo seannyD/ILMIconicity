@@ -43,6 +43,14 @@ abline(h=0)
 dev.off()
 
 
+colsppt = c("#288F62","#288F62","#CF4A08","#CF4A08")
+
+plotmeans(increaseIconicity ~ paste(condition,inFinalLang), data=datax[datax$Human,], connect = list(1:2,3:4),xlab='', ylab="Increase", legends = c("Rejected","Survived","Rejected","Survived"), col = colsppt, pch=16, ccol = colsppt[c(1,3)], barcol = colsppt, barwidth = 2, n.label = F)
+title(main="Iconicity")
+axis(1,at=c(1.5,3.5),c("Communication","Reproduction"),line=1, tick=F)
+abline(h=0)
+
+
 
 plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Learn' & !alldatx$Human,], n.label = F)
 plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Comm',],add=T,col=2,barcol=2, n.label = F)
@@ -144,6 +152,17 @@ dens.learnS = density(datax[datax$condition=='Learn',]$systematicity.increase)
 plot(dens.commS, main='', xlab='Change in iconicity')
 lines(dens.learnS, col=2)
 abline(v=0)
+
+hist(comm.innovation.iconicity.survived.dist, col=cols[1],
+     breaks=14, 
+     border = cols[1], 
+     main='',
+     xlab="Change in iconicity")
+hist(comm.innovation.iconicity.rejected.dist, col=cols[1],
+     breaks=14, 
+     border = cols[2], 
+     main='',
+     xlab="Change in iconicity", add=T)
 
 
 cx = ctree(RatedSpikiness~as.factor(Cond)+as.factor(Gen) + as.factor(Shape) + as.factor(Colour) + as.factor(Border), data=finalLangs)

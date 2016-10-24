@@ -345,6 +345,7 @@ legend(-0.45,150, legend = c("Communication","Reproduction"), col=cols, pch=15, 
 
 ```
 
+
 Are the distributions biased?  The curve for the learning condition looks like it has a bump on the right.  Test the symmetry with a Wilcox signed rank test and the MGG test (Miao, Gel & Gastwirth, 2006, see `symmetry.test` function in `lawstat` package).
 
 ```{r symmetryTest, cache=T}
