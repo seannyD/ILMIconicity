@@ -165,6 +165,43 @@ Plot the fixed effects with error estiamtes from the final model.  The 3-way int
 sjp.lmer(m7, type='fe', geom.colors=c(1,1))
 ```
 
+Visualise the three-way interaction. The first part of this script creates some new data and uses the model to predict values.
+
+The interaction is driven by Spiky and Round shapes diverging over generations in the communication condition, but not in the reproduction condition.
+
+```{r}
+predictedData = data.frame(
+  RatedSpikiness.center = NA,
+  Gen=rep(1:6,4),
+  Shape= rep(rep(c("Spiky","Round"),each=6),2),
+  Cond = rep(c("Communication","Learn"),each=12)
+)
+predictedData$RatedSpikiness.center = predict(m7, 
+                                newdata=predictedData, re.form=NA)
+#Re-scale
+predictedData$RatedSpikiness = 
+  predictedData$RatedSpikiness.center + mean(finalLangs$RatedSpikiness)
+
+# Make groups and set order for plotting
+predictedData$group = paste(predictedData$Cond, predictedData$Shape)
+predictedData$group = gsub("Learn","Reproduction", predictedData$group)
+predictedData$group = factor(
+  predictedData$group,
+  levels = c("Communication Spiky","Communication Round",
+             "Reproduction Spiky", "Reproduction Round"))
+
+# Plot the predictions
+qplot(Gen, RatedSpikiness, 
+      data=predictedData, 
+      color=group,
+      geom=c("line")) +
+  scale_color_manual(values=c("#d7191c", "#fdae61", "#2c7bb6", "#abd9e9")) +
+  xlab("Generation") +
+  ylab("Rated Spikiness") +
+  ggtitle("Model predictions for spikiness ratings")
+
+```
+
 \newpage
 
 ## Mixed effects model with binarised spikiness ratings
@@ -536,7 +573,7 @@ plotmeans(correctGuess~gen,alldatx[alldatx$condition=='Comm',],add=T,col=2,barco
 
 Binomial mixed effects model, with random effects for chain, target item.  Test whether there are differences between conditions.
 
-```{r}
+```{r memX1}
 
 ctrl = glmerControl(optCtrl = list(maxfun=50000))
 # we want to exclude trials where the computer is guessing meanings 
@@ -561,8 +598,8 @@ anova(m0,m1,m2)
 
 ```{r message=F, warning=F}
 x = sjp.lmer(m2, sort.est='sort.all', prnt.plot=F,
-             axis.labels=c("Chain",'Item','Generation'),
-             geom.colors=c(1,1))
+             geom.colors=c(1,1),
+             facet.grid = T)
 x$plot.list[[3]] + 
   xlab("Generation") + 
   ylab("Random effect (fit of increase in correct guesses)")
