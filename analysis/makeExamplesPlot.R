@@ -1,7 +1,7 @@
 setwd("~/Documents/MPI/MonicaIconicity/SelectionAnalysis/analysis/")
 
 library(png)
-
+library(XLConnect)
 
 # finalLangs = read.csv("../data/finalLanguages/FinalLanguages.csv", stringsAsFactors = F)
 # # convert labels to English
@@ -39,8 +39,8 @@ makeExampleGrid = function(dx, filename){
   order = c("RoundRed","RoundRedThick",'SpikyRed','SpikyRedThick',
             "RoundGreen","RoundGreenThick",'SpikyGreen','SpikyGreenThick',
             "RoundBlue","RoundBlueThick",'SpikyBlue','SpikyBlueThick')
-  scalex = 0.6
-  pdf(filename, width=10*scalex , height=8*scalex )
+  scalex = 0.5
+  pdf(filename, width=12*scalex , height=8*scalex )
   par(mfrow=c(3,4), mar=c(1,1,2,1))
   
   for(i in 1:length(order)){
