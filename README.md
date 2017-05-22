@@ -14,9 +14,9 @@ http://www.mpi.nl/publications/escidoc-2441824
 
 
 
--  (Main data)[https://github.com/seannyD/ILMIconicity/blob/master/data/finalLanguages/FinalLanguages.csv]
--  (Trial-level data)[https://github.com/seannyD/ILMIconicity/blob/master/results/AllTrialData.csv]
--  (Trial level data with increase in iconicity column)[https://github.com/seannyD/ILMIconicity/blob/master/results/IncreaseInIconicity.csv]
+-  [Main data](https://github.com/seannyD/ILMIconicity/blob/master/data/finalLanguages/FinalLanguages.csv)
+-  [Trial-level data](https://github.com/seannyD/ILMIconicity/blob/master/results/AllTrialData.csv)
+-  [Trial level data with increase in iconicity column](https://github.com/seannyD/ILMIconicity/blob/master/results/IncreaseInIconicity.csv)
 -  Main analysis results [here](https://github.com/seannyD/ILMIconicity/blob/master/analysis/runModels.pdf)
 
 For the full supporting information write-up, see [IconcitySI_combined.pdf](https://github.com/seannyD/ILMIconicity/raw/master/IconcitySI_combined.pdf)
