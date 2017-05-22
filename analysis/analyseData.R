@@ -26,6 +26,8 @@ meaningDistance =
   outer(finalLangs$Border[1:12],finalLangs$Border[1:12],"!=")
 
 
+
+
 finalLangs2 = finalLangs[!duplicated(finalLangs$Word),]
 
 # load model to predict spikiness
